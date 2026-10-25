@@ -1,5 +1,8 @@
-import { test, describe } from 'node:test';
+import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
+import { once } from 'node:events';
+import type { Server } from 'node:http';
+import { server } from '../server.js';
 
 interface BookingResponse {
   ticketNumber: string;
@@ -26,6 +29,23 @@ interface UploadResponse {
 
 describe('💈 Simulasi Alur Penuh (End-to-End Live Workflow 3 Mitra)', () => {
   const BASE_URL = 'http://localhost:4000';
+  let spawnedServer: Server | null = null;
+
+  before(async () => {
+    try {
+      const ping = await fetch(`${BASE_URL}/health`);
+      if (ping.ok) return;
+    } catch {
+      spawnedServer = server.listen(4000);
+      await once(spawnedServer, 'listening');
+    }
+  });
+
+  after(() => {
+    if (spawnedServer) {
+      spawnedServer.close();
+    }
+  });
 
   test('Alur 1: Pelanggan booking di Febrian Barbershop dengan Smart Dispatch', async () => {
     const res = await fetch(`${BASE_URL}/api/queue/book`, {

@@ -20,6 +20,8 @@ import 'package:geges_smartbarber/l10n/generated/app_localizations.dart';
 // --- No-Op Service for Tenant Mode ---
 class _NoOpQueueService implements QueueServiceContract {
   @override
+  Future<dynamic> createQueue(Map<String, dynamic> queueData) async => null;
+  @override
   Future<int> cancelExpiredAwaitingPaymentQueuesForCustomer(String customerId) async => 0;
   @override
   Future<int> cancelExpiredWaitingQueuesForCustomer(String customerId) async => 0;

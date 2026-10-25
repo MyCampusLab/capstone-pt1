@@ -2,6 +2,7 @@ import 'package:geges_smartbarber/models/queue.dart';
 
 /// Minimal contract used for injection into UI tests to avoid heavy Firestore deps.
 abstract class QueueServiceContract {
+  Future<dynamic> createQueue(Map<String, dynamic> queueData);
   Future<Queue?> getQueueById(String id);
   Future<Queue?> resolveQueueForCustomerByIdOrOrder(
     String idOrOrderId,

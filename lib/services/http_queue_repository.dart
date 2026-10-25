@@ -142,6 +142,43 @@ class HttpQueueRepository implements QueueServiceContract {
   // =========================================================================
   // IMPLEMENTASI QUEUE SERVICE CONTRACT
   // =========================================================================
+  @override
+  Future<dynamic> createQueue(Map<String, dynamic> queueData) async {
+    final rawShopId = (queueData['barbershop_id'] ?? queueData['barbershopId'] ?? 'febrian-barbershop').toString();
+    final tenantSlug = rawShopId.contains('-') ? rawShopId : 'febrian-barbershop';
+
+    final customerName = (queueData['customer_name'] ?? queueData['customerName'] ?? 'Pelanggan').toString();
+    final customerPhone = (queueData['phone_number'] ?? queueData['customerPhone'] ?? '08123456789').toString();
+
+    int serviceId = 1;
+    if (queueData['service_ids'] is List && (queueData['service_ids'] as List).isNotEmpty) {
+      final parsed = int.tryParse((queueData['service_ids'] as List).first.toString());
+      if (parsed != null) serviceId = parsed;
+    }
+
+    final rawBarberId = queueData['barberman_id'] ?? queueData['barberId'];
+    dynamic barberId = 'smart';
+    if (rawBarberId != null && rawBarberId.toString().isNotEmpty && rawBarberId != 'auto' && rawBarberId != 'smart') {
+      final parsedB = int.tryParse(rawBarberId.toString());
+      barberId = parsedB ?? 'smart';
+    }
+
+    try {
+      final res = await bookQueue(
+        tenantSlug: tenantSlug,
+        customerName: customerName,
+        customerPhone: customerPhone,
+        serviceId: serviceId,
+        barberId: barberId,
+        bookingType: 'online_app',
+      );
+      return res;
+    } catch (e) {
+      debugPrint('[HttpQueueRepository] Error creating queue on backend: $e');
+      rethrow;
+    }
+  }
+
 
   @override
   Future<Queue?> getQueueById(String id) async {
