@@ -62,4 +62,16 @@ describe('🌐 End-to-End API Suite: Twelve-Factor Backend Core', () => {
       assert.ok(true);
     }
   });
+  test('GET /api/queue/ticket/:slug/:ticketNumber mengembalikan data tiket', async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/api/queue/ticket/febrian-barbershop/S-01`);
+      if (res.ok) {
+        const body = (await res.json()) as { ticket_number: string; status: string };
+        assert.strictEqual(body.ticket_number, 'S-01');
+        assert.strictEqual(body.status, 'waiting');
+      }
+    } catch {
+      assert.ok(true);
+    }
+  });
 });

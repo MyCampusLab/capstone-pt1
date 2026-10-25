@@ -1,4 +1,4 @@
-.PHONY: help dev build test db-up db-down db-migrate db-seed clean status
+.PHONY: help dev build test db-up db-down db-migrate db-seed clean status tunnel
 
 help:
 	@echo "================================================================="
@@ -12,6 +12,7 @@ help:
 	@echo "  make db-migrate  - Eksekusi migrasi skema PostgreSQL multi-tenant"
 	@echo "  make db-seed     - Masukkan data awal 3 barbershop mitra (Febrian, RR, Stupid Culture)"
 	@echo "  make status      - Periksa status kontainer & proses backend"
+	@echo "  make tunnel      - Buka tunnel HTTPS publik gratis ke port 4000 via Cloudflare"
 	@echo "================================================================="
 
 dev:
@@ -40,6 +41,9 @@ status:
 	cd backend && docker compose ps
 	@echo "\n--- Node/Bun Processes ---"
 	pgrep -fl "bun|node" || true
+
+tunnel:
+	cloudflared tunnel --url http://localhost:4000
 
 clean:
 	rm -rf backend/dist backend/node_modules/.cache

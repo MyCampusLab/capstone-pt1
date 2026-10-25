@@ -244,6 +244,33 @@ export function createQueueRouter(io: SocketIOServer): Router {
     io.emit(`queue:${tenantSlug}:updated`, responsePayload);
     res.status(201).json(responsePayload);
   });
+  router.get('/ticket/:tenantSlug/:ticketNumber', async (req: Request, res: Response) => {
+    const { tenantSlug, ticketNumber } = req.params;
+
+    try {
+      const qRes = await query(`
+        SELECT q.id, q.ticket_number, q.customer_name, q.status,
+               q.estimated_duration, q.estimated_start_time,
+               b.id as barber_id, b.name as barber_name, b.chair_number,
+               s.name as service_name
+        FROM queue_reservations q
+        JOIN tenants t ON q.tenant_id = t.id
+        JOIN barbers b ON q.barber_id = b.id
+        JOIN services s ON q.service_id = s.id
+        WHERE t.slug = $1 AND q.ticket_number = $2
+        ORDER BY q.id DESC
+        LIMIT 1;
+      `, [tenantSlug, ticketNumber]);
+
+      if (qRes.rows.length > 0) {
+        res.json(qRes.rows[0]);
+        return;
+      }
+    } catch {}
+
+    res.status(404).json({ error: 'Tiket antrean tidak ditemukan.' });
+  });
+
 
   return router;
 }

@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
@@ -53,7 +55,54 @@ class HttpQueueRepository implements QueueServiceContract {
     };
 
     final res = await _apiClient.post('/api/queue/book', payload);
-    return Map<String, dynamic>.from(res as Map);
+    final result = Map<String, dynamic>.from(res as Map);
+    await saveActiveTicketLocally(result, tenantSlug);
+    return result;
+  }
+
+  /// Menyimpan tiket aktif ke memori lokal HP (Offline-First Ticket Cache)
+  Future<void> saveActiveTicketLocally(Map<String, dynamic> ticket, String tenantSlug) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final enriched = Map<String, dynamic>.from(ticket);
+      enriched['tenantSlug'] = tenantSlug;
+      await prefs.setString('fbrn_active_ticket', jsonEncode(enriched));
+    } catch (e) {
+      debugPrint('[HttpQueueRepository] Error saving ticket locally: $e');
+    }
+  }
+
+  /// Mengambil tiket aktif dari cache lokal HP saat offline / aplikasi dibuka ulang
+  Future<Map<String, dynamic>?> getActiveTicketLocally() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString('fbrn_active_ticket');
+      if (raw != null && raw.isNotEmpty) {
+        return Map<String, dynamic>.from(jsonDecode(raw) as Map);
+      }
+    } catch (e) {
+      debugPrint('[HttpQueueRepository] Error reading local ticket: $e');
+    }
+    return null;
+  }
+
+  /// Menghapus tiket aktif lokal saat potong rambut selesai
+  Future<void> clearActiveTicketLocally() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('fbrn_active_ticket');
+    } catch (_) {}
+  }
+
+  /// Mengecek status live tiket ke server
+  Future<Map<String, dynamic>?> fetchTicketStatus(String tenantSlug, String ticketNumber) async {
+    try {
+      final res = await _apiClient.get('/api/queue/ticket/$tenantSlug/$ticketNumber');
+      if (res is Map) {
+        return Map<String, dynamic>.from(res);
+      }
+    } catch (_) {}
+    return null;
   }
 
   /// Mengunggah gambar via presigned URL (S3/R2) - Zero Base64 di database
