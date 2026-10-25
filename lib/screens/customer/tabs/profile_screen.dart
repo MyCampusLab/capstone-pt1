@@ -324,6 +324,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           IconButton(
+            tooltip: 'Pengaturan Profil',
             onPressed: _goToEditProfile,
             icon: const Icon(Icons.settings, color: kTextGrey, size: 24),
           ),

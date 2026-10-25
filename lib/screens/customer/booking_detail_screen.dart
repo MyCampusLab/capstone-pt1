@@ -474,6 +474,7 @@ class _BookingDetailView extends StatelessWidget {
               child: CircleAvatar(
                 backgroundColor: Colors.black54,
                 child: IconButton(
+                  tooltip: 'Tutup tampilan gambar',
                   icon: const Icon(Icons.close, color: Colors.white),
                   onPressed: () => Navigator.pop(context),
                 ),

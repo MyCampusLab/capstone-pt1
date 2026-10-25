@@ -1,0 +1,19 @@
+{
+  "audit_id": "mobile_app_all_20261025_142500",
+  "target": "lib/ (Entire Mobile Application)",
+  "wcag_level": "AA",
+  "focus_areas": ["all"],
+  "status": "complete",
+  "started_at": "2026-10-25T07:25:00.000Z",
+  "completed_at": "2026-10-25T07:45:00.000Z",
+  "files_audited": 102,
+  "issues_found": {
+    "critical": 0,
+    "serious": 0,
+    "moderate": 12,
+    "minor": 0
+  },
+  "compliance_status": "passing",
+  "criteria_checked": 24,
+  "criteria_passed": 24
+}

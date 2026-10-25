@@ -327,7 +327,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
         backgroundColor: kSurface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20), 
+          tooltip: 'Kembali',
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
           onPressed: () {
             if (widget.onFinish != null) {
               widget.onFinish!();

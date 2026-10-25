@@ -13,7 +13,7 @@ import 'package:geges_smartbarber/services/queue_service.dart';
 const Color kBrownAccent = Color(0xFFC3A47B);
 const Color kDarkGrey = Color(0xFF1E1E1E);
 const Color kSurface = Colors.black;
-const Color kTextGrey = Colors.white54;
+const Color kTextGrey = Colors.white70;
 const Color kOrangeWarning = Color(0xFFFFB74D);
 const Color kGreenSuccess = Color(0xFF81C784);
 const Color kRedError = Color(0xFFE57373);

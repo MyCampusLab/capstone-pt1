@@ -210,7 +210,40 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildSearchBar() {
     final l10n = AppLocalizations.of(context)!;
-    return Padding(padding: const EdgeInsets.symmetric(horizontal: 24.0), child: TextField(controller: _searchController, onChanged: _onSearchChanged, style: const TextStyle(color: Colors.white), decoration: InputDecoration(hintText: l10n.searchHintHome, hintStyle: const TextStyle(color: Color(0xFF6B6B6B)), prefixIcon: const Icon(Icons.search, color: Color(0xFF6B6B6B)), suffixIcon: ValueListenableBuilder<TextEditingValue>(valueListenable: _searchController, builder: (context, value, _) => value.text.isNotEmpty ? IconButton(icon: const Icon(Icons.clear, color: Color(0xFF6B6B6B), size: 20), onPressed: () { _searchController.clear(); _onSearchChanged(''); }) : const SizedBox.shrink()), filled: true, fillColor: kDarkGrey, border: OutlineInputBorder(borderRadius: BorderRadius.circular(15.0), borderSide: BorderSide.none), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15.0), borderSide: BorderSide.none), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15.0), borderSide: const BorderSide(color: kBrownAccent, width: 1.5)))));
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      child: TextField(
+        controller: _searchController,
+        onChanged: _onSearchChanged,
+        style: const TextStyle(color: Colors.white),
+        decoration: InputDecoration(
+          hintText: l10n.searchHintHome,
+          hintStyle: const TextStyle(color: Color(0xFF9E9E9E)),
+          prefixIcon: const Icon(Icons.search, color: Color(0xFF9E9E9E)),
+          suffixIcon: ValueListenableBuilder<TextEditingValue>(
+            valueListenable: _searchController,
+            builder: (context, value, _) => value.text.isNotEmpty
+                ? IconButton(
+                    tooltip: 'Hapus teks pencarian',
+                    icon: const Icon(Icons.clear, color: Color(0xFF9E9E9E), size: 20),
+                    onPressed: () {
+                      _searchController.clear();
+                      _onSearchChanged('');
+                    },
+                  )
+                : const SizedBox.shrink(),
+          ),
+          filled: true,
+          fillColor: kDarkGrey,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(15.0), borderSide: BorderSide.none),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15.0), borderSide: BorderSide.none),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15.0),
+            borderSide: const BorderSide(color: kBrownAccent, width: 1.5),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildRecommendedList() {
@@ -410,7 +443,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 6.0),
-          child: Container(
+          child: Semantics(
+            button: true,
+            label: 'Tiket antrean aktif $ticketNumber di $shopName, kapster $barberName, estimasi $estMins menit',
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () => _onItemTapped(1),
+              child: Container(
             padding: const EdgeInsets.all(14.0),
             decoration: BoxDecoration(
               color: const Color(0xFF241E17),
@@ -453,7 +492,9 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-        );
+        ),
+      ),
+    );
       },
     );
   }
@@ -464,7 +505,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return const Padding(padding: EdgeInsets.only(top: 40.0), child: Center(child: CircularProgressIndicator(color: kBrownAccent)));
     }
     if (_searchResults!.isEmpty) {
-      return Padding(padding: const EdgeInsets.only(top: 40.0), child: Center(child: Column(children: [const Icon(Icons.search_off, size: 64, color: Colors.white24), const SizedBox(height: 16), Text(l10n.noResultsFor(q), style: const TextStyle(color: Colors.white54, fontSize: 16))])));
+      return Padding(padding: const EdgeInsets.only(top: 40.0), child: Center(child: Column(children: [const Icon(Icons.search_off, size: 64, color: Colors.white38), const SizedBox(height: 16), Text(l10n.noResultsFor(q), style: const TextStyle(color: Colors.white70, fontSize: 16))])));
     }
     final count = _searchResults!.length;
     final resultText = l10n.foundResults(count);

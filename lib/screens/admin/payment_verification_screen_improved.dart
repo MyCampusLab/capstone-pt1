@@ -31,6 +31,7 @@ class _PaymentVerificationScreenImprovedState extends State<PaymentVerificationS
         elevation: 0,
         actions: [
           IconButton(
+            tooltip: 'Segarkan data verifikasi',
             icon: const Icon(Icons.refresh),
             onPressed: _refresh,
           )

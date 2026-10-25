@@ -54,6 +54,7 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
         elevation: 0,
         actions: [
           IconButton(
+            tooltip: 'Pilih Tanggal Laporan',
             icon: const Icon(Icons.calendar_today),
             onPressed: () async {
               final picked = await showDatePicker(

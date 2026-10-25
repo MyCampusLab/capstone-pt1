@@ -363,8 +363,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         border: Border.all(color: Colors.red.withValues(alpha: 0.2))
       ),
       child: IconButton(
-        onPressed: () => _confirmLogout(), 
-        icon: const Icon(Icons.logout_rounded, color: Colors.redAccent, size: 24)
+        tooltip: 'Keluar Akun Admin',
+        onPressed: () => _confirmLogout(),
+        icon: const Icon(Icons.logout_rounded, color: Colors.redAccent, size: 24),
       ),
     );
   }

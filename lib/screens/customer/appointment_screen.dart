@@ -184,7 +184,16 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
       child: Scaffold(
         resizeToAvoidBottomInset: false, // Fix laggy keyboard animation (Layout Thrashing)
         backgroundColor: kSurface, 
-        appBar: AppBar(backgroundColor: kSurface, title: Text(widget.barbershop.name, style: const TextStyle(fontWeight: FontWeight.bold)), elevation: 0, leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, size: 20), onPressed: () => _currentStep > 0 ? _prevStep() : Navigator.pop(context))),
+        appBar: AppBar(
+          backgroundColor: kSurface,
+          title: Text(widget.barbershop.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+          elevation: 0,
+          leading: IconButton(
+            tooltip: 'Kembali',
+            icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+            onPressed: () => _currentStep > 0 ? _prevStep() : Navigator.pop(context),
+          ),
+        ),
         body: Column(children: [
           _buildProgressHeader(), 
           Expanded(
@@ -238,7 +247,16 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
         } catch (_) {}
       }
 
-      return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(l10n.selectServiceTitle, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)), const SizedBox(height: 8), Text(l10n.selectServiceSubtitle, style: const TextStyle(color: Colors.white54)), const SizedBox(height: 24), ...shopServices.map((s) => _serviceCard(s))]);
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(l10n.selectServiceTitle, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Text(l10n.selectServiceSubtitle, style: const TextStyle(color: Colors.white70)),
+          const SizedBox(height: 24),
+          ...shopServices.map((s) => _serviceCard(s)),
+        ],
+      );
     });
   }
 
@@ -333,7 +351,39 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
   }
 
   Widget _choiceCard({required IconData icon, required String title, required String subtitle, required bool isSelected, required VoidCallback onTap}) {
-    return InkWell(onTap: onTap, child: Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: isSelected ? kBrownAccent.withValues(alpha: 0.1) : kCardBg, borderRadius: BorderRadius.circular(16), border: Border.all(color: isSelected ? kBrownAccent : Colors.transparent)), child: Row(children: [Icon(icon, color: isSelected ? kBrownAccent : Colors.white24, size: 32), const SizedBox(width: 16), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: TextStyle(color: isSelected ? kBrownAccent : Colors.white, fontWeight: FontWeight.bold)), const SizedBox(height: 4), Text(subtitle, style: const TextStyle(color: Colors.white54, fontSize: 12))])), if (isSelected) const Icon(Icons.check_circle, color: kBrownAccent, size: 20)])));
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      label: '$title, $subtitle',
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: isSelected ? kBrownAccent.withValues(alpha: 0.1) : kCardBg,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: isSelected ? kBrownAccent : Colors.transparent),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: isSelected ? kBrownAccent : Colors.white24, size: 32),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: TextStyle(color: isSelected ? kBrownAccent : Colors.white, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 4),
+                    Text(subtitle, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                  ],
+                ),
+              ),
+              if (isSelected) const Icon(Icons.check_circle, color: kBrownAccent, size: 20),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildBarberList() {
@@ -343,27 +393,44 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
       return SizedBox(height: 120, child: ListView.builder(scrollDirection: Axis.horizontal, itemCount: activeBarbers.length, itemBuilder: (context, i) { 
         final b = activeBarbers[i]; 
         bool isSelected = _selectedBarberman?.id == b.id; 
-        return Padding(padding: const EdgeInsets.only(right: 12), child: InkWell(onTap: () { setState(() => _selectedBarberman = b); _fetchBusySlots(); }, child: Column(children: [
-          Container(
-            width: 70, height: 70, 
-            decoration: BoxDecoration(
-              shape: BoxShape.circle, 
-              border: Border.all(color: isSelected ? kBrownAccent : Colors.transparent, width: 2), 
-              color: Colors.grey[900]
-            ), 
-            child: ClipOval(
-              child: AppImage(
-                imageUrl: b.imageUrl,
-                width: 70,
-                height: 70,
-                fit: BoxFit.cover,
-                errorWidget: const Icon(Icons.person, color: Colors.white24),
+        return Padding(
+          padding: const EdgeInsets.only(right: 12),
+          child: Semantics(
+            button: true,
+            selected: isSelected,
+            label: 'Kapster ${b.name}${isSelected ? ', Terpilih' : ''}',
+            child: InkWell(
+              onTap: () {
+                setState(() => _selectedBarberman = b);
+                _fetchBusySlots();
+              },
+              child: Column(
+                children: [
+                  Container(
+                    width: 70,
+                    height: 70,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: isSelected ? kBrownAccent : Colors.transparent, width: 2),
+                      color: Colors.grey[900],
+                    ),
+                    child: ClipOval(
+                      child: AppImage(
+                        imageUrl: b.imageUrl,
+                        width: 70,
+                        height: 70,
+                        fit: BoxFit.cover,
+                        errorWidget: const Icon(Icons.person, color: Colors.white24),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(b.name, style: TextStyle(color: isSelected ? kBrownAccent : Colors.white70, fontSize: 12)),
+                ],
               ),
             ),
-          ), 
-          const SizedBox(height: 8), 
-          Text(b.name, style: TextStyle(color: isSelected ? kBrownAccent : Colors.white70, fontSize: 12))
-        ]))); 
+          ),
+        );
       }));
     });
   }
@@ -389,7 +456,44 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
         if (b.specificOffDays.contains(DateFormat('yyyy-MM-dd').format(date))) isOpen = false; 
       }
       bool isSelected = _selectedDate.day == date.day && _selectedDate.month == date.month;
-      return Padding(padding: const EdgeInsets.only(right: 10), child: InkWell(onTap: isOpen ? () { setState(() { _selectedDate = date; _selectedTime = null; _availabilityError = null; }); _fetchBusySlots(); } : null, child: Container(width: 65, decoration: BoxDecoration(color: isSelected ? kBrownAccent : (isOpen ? kCardBg : Colors.black26), borderRadius: BorderRadius.circular(16)), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Text(DateFormat('EEE').format(date), style: TextStyle(color: isSelected ? Colors.black : Colors.white54, fontSize: 12)), const SizedBox(height: 4), Text("${date.day}", style: TextStyle(color: isSelected ? Colors.black : Colors.white, fontSize: 18, fontWeight: FontWeight.bold)), if (!isOpen) Text(AppLocalizations.of(context)!.shopHoliday, style: const TextStyle(color: Colors.redAccent, fontSize: 8, fontWeight: FontWeight.bold))]))));
+      return Padding(
+        padding: const EdgeInsets.only(right: 10),
+        child: Semantics(
+          button: true,
+          selected: isSelected,
+          enabled: isOpen,
+          label: '${DateFormat('EEEE, d MMMM').format(date)}${isOpen ? '' : ' - Toko Libur'}',
+          child: InkWell(
+            onTap: isOpen
+                ? () {
+                    setState(() {
+                      _selectedDate = date;
+                      _selectedTime = null;
+                      _availabilityError = null;
+                    });
+                    _fetchBusySlots();
+                  }
+                : null,
+            child: Container(
+              width: 65,
+              decoration: BoxDecoration(
+                color: isSelected ? kBrownAccent : (isOpen ? kCardBg : Colors.black26),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(DateFormat('EEE').format(date), style: TextStyle(color: isSelected ? Colors.black : Colors.white70, fontSize: 12)),
+                  const SizedBox(height: 4),
+                  Text('${date.day}', style: TextStyle(color: isSelected ? Colors.black : Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  if (!isOpen)
+                    Text(AppLocalizations.of(context)!.shopHoliday, style: const TextStyle(color: Colors.redAccent, fontSize: 8, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
     }));
   }
 

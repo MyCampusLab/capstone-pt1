@@ -166,10 +166,11 @@ class _BarbershopDetailScreenState extends State<BarbershopDetailScreen>
              backgroundColor: kSurface,
              appBar: AppBar(
                backgroundColor: kDarkGrey,
-               leading: IconButton(
-                 icon: const Icon(Icons.arrow_back, color: Colors.white),
-                 onPressed: () => Navigator.of(context).pop(),
-               ),
+              leading: IconButton(
+                tooltip: 'Kembali',
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
              ),
              body: Center(
                child: Column(
@@ -206,6 +207,7 @@ class _BarbershopDetailScreenState extends State<BarbershopDetailScreen>
                   pinned: true,
                   backgroundColor: kDarkGrey,
                   leading: IconButton(
+                    tooltip: 'Kembali',
                     icon: const Icon(Icons.arrow_back, color: Colors.white),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
@@ -226,6 +228,7 @@ class _BarbershopDetailScreenState extends State<BarbershopDetailScreen>
                             ),
                           )
                         : IconButton(
+                            tooltip: _isFavorite ? 'Hapus dari favorit' : 'Tambah ke favorit',
                             icon: Icon(
                               _isFavorite ? Icons.favorite : Icons.favorite_border,
                               color: _isFavorite ? Colors.redAccent : Colors.white,

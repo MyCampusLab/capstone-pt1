@@ -26,6 +26,7 @@ class _ServiceManagementScreenState extends State<ServiceManagementScreen> {
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
+            tooltip: 'Tambah Layanan Baru',
             icon: const Icon(Icons.add_box_outlined, color: kBrownAccent),
             onPressed: () => _showEditDialog(null),
           ),

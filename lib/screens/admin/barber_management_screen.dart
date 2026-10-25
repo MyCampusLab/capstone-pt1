@@ -62,8 +62,8 @@ class _BarberManagementScreenState extends State<BarberManagementScreen> with Si
         CircleAvatar(backgroundColor: kBrownAccent.withValues(alpha: 0.2), child: Text(b.name.isNotEmpty ? b.name[0].toUpperCase() : '?', style: const TextStyle(color: kBrownAccent))),
         const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(b.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)), if (b.isActive) Text(b.onLeave ? 'Sedang Cuti' : 'Bekerja', style: TextStyle(color: b.onLeave ? Colors.orange : Colors.green, fontSize: 12))])),
-        IconButton(icon: const Icon(Icons.edit, color: Colors.white54), onPressed: () => _showEditDialog(b)),
-        if (b.isActive) IconButton(icon: const Icon(Icons.delete_outline, color: Colors.redAccent), onPressed: () => _confirmDelete(b)) else IconButton(icon: const Icon(Icons.restore, color: Colors.greenAccent), onPressed: () => _restoreBarber(b)),
+        IconButton(tooltip: 'Edit data kapster', icon: const Icon(Icons.edit, color: Colors.white70), onPressed: () => _showEditDialog(b)),
+        if (b.isActive) IconButton(tooltip: 'Hapus kapster', icon: const Icon(Icons.delete_outline, color: Colors.redAccent), onPressed: () => _confirmDelete(b)) else IconButton(tooltip: 'Pulihkan kapster', icon: const Icon(Icons.restore, color: Colors.greenAccent), onPressed: () => _restoreBarber(b)),
       ]),
       if (b.isActive) ...[const Divider(color: Colors.white12), const SizedBox(height: 8), SizedBox(width: double.infinity, child: OutlinedButton.icon(icon: const Icon(Icons.calendar_month, size: 18), label: const Text('Atur Jadwal Libur & Cuti'), style: OutlinedButton.styleFrom(foregroundColor: kBrownAccent, side: const BorderSide(color: kBrownAccent)), onPressed: () => _showScheduleDialog(b)))]
     ])));
