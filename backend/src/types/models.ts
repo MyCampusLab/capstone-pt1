@@ -67,7 +67,11 @@ export const FALLBACK_BARBERS: FallbackBarber[] = [
 export const FALLBACK_SERVICES: FallbackService[] = [
   { id: 1, tenant_id: 1, name: 'Potong Rambut Standar', price: 40000, complexity_score: 2.5, base_duration_min: 25, category: 'ringan' },
   { id: 2, tenant_id: 1, name: 'Skin Fade & Beard Sculpting', price: 45000, complexity_score: 5.5, base_duration_min: 35, category: 'sedang' },
-  { id: 3, tenant_id: 2, name: 'Signature Haircut', price: 35000, complexity_score: 2.5, base_duration_min: 30, category: 'ringan' },
-  { id: 4, tenant_id: 3, name: 'Gentleman Haircut (AC)', price: 25000, complexity_score: 2.5, base_duration_min: 25, category: 'ringan' },
-  { id: 5, tenant_id: 3, name: 'Taper / Skin Fade', price: 35000, complexity_score: 5.5, base_duration_min: 35, category: 'sedang' },
+  { id: 3, tenant_id: 1, name: 'Pewarnaan / Hair Color', price: 80000, complexity_score: 8.5, base_duration_min: 60, category: 'tinggi' },
+  { id: 4, tenant_id: 2, name: 'Signature Haircut', price: 35000, complexity_score: 2.5, base_duration_min: 30, category: 'ringan' },
+  { id: 5, tenant_id: 2, name: 'Fade Haircut', price: 40000, complexity_score: 5.5, base_duration_min: 35, category: 'sedang' },
+  { id: 6, tenant_id: 2, name: 'Coloring / Bleaching', price: 75000, complexity_score: 8.5, base_duration_min: 60, category: 'tinggi' },
+  { id: 7, tenant_id: 3, name: 'Gentleman Haircut (AC)', price: 25000, complexity_score: 2.5, base_duration_min: 25, category: 'ringan' },
+  { id: 8, tenant_id: 3, name: 'Taper / Skin Fade', price: 35000, complexity_score: 5.5, base_duration_min: 35, category: 'sedang' },
+  { id: 9, tenant_id: 3, name: 'Hair Coloring / Cat', price: 65000, complexity_score: 8.5, base_duration_min: 60, category: 'tinggi' },
 ];

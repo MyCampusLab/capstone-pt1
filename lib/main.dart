@@ -26,7 +26,10 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 
 // ==========================================
 
-const String sentryDsn = 'https://6ae0b86bbd9b4371c7f7dbc599e5b419@o4510682370015232.ingest.us.sentry.io/4510682373554176';
+const String sentryDsn = String.fromEnvironment(
+  'SENTRY_DSN',
+  defaultValue: 'https://6ae0b86bbd9b4371c7f7dbc599e5b419@o4510682370015232.ingest.us.sentry.io/4510682373554176',
+);
 
 void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();

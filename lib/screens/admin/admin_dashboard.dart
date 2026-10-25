@@ -44,19 +44,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   bool _isLoading = true;
   bool _isShopOpen = false;
   bool _isTogglingStatus = false;
-  Timer? _autoCancelTimer;
 
   @override
   void initState() {
     super.initState();
     _loadAdminData();
-    _autoCancelTimer = Timer.periodic(const Duration(minutes: 1), (_) {
-      if (_adminBarbershopId != null) _queueService.cancelExpiredBookings(_adminBarbershopId!);
-    });
+    // Expiration cancellation handled server-side (12-Factor backend)
   }
 
   @override
-  void dispose() { _autoCancelTimer?.cancel(); super.dispose(); }
+  void dispose() { super.dispose(); }
 
   Future<void> _loadAdminData() async {
     if (_adminUid == null) { _logout(context); return; }

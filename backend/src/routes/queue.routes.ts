@@ -65,6 +65,8 @@ export function createQueueRouter(io: SocketIOServer): Router {
 
     let serviceComplexity = 3.0;
     let serviceName = 'Layanan Terpilih';
+    let serviceFound = false;
+
     try {
       const sRes = await query('SELECT id, name, complexity_score FROM services WHERE id = $1 AND tenant_id = $2', [serviceId, tenantId]);
       if (sRes.rows.length > 0) {
@@ -72,20 +74,23 @@ export function createQueueRouter(io: SocketIOServer): Router {
         if (row && typeof row === 'object' && 'name' in row && 'complexity_score' in row) {
           serviceComplexity = Number(row.complexity_score);
           serviceName = String(row.name);
-        }
-      } else {
-        const sFallback = FALLBACK_SERVICES.find((s) => s.id === serviceId);
-        if (sFallback) {
-          serviceComplexity = sFallback.complexity_score;
-          serviceName = sFallback.name;
+          serviceFound = true;
         }
       }
-    } catch {
-      const sFallback = FALLBACK_SERVICES.find((s) => s.id === serviceId);
+    } catch {}
+
+    if (!serviceFound) {
+      const sFallback = FALLBACK_SERVICES.find((s) => s.id === serviceId && s.tenant_id === tenantId);
       if (sFallback) {
         serviceComplexity = sFallback.complexity_score;
         serviceName = sFallback.name;
+        serviceFound = true;
       }
+    }
+
+    if (!serviceFound) {
+      res.status(400).json({ error: 'Layanan yang dipilih tidak tersedia di barbershop ini.' });
+      return;
     }
 
     let activeBarbers: ActiveBarber[] = [];
@@ -169,8 +174,20 @@ export function createQueueRouter(io: SocketIOServer): Router {
     }
 
     const ticketPrefix = isSmartDispatch ? 'S' : 'A';
-    const ticketSeq = currentActiveQueues.length + 1;
-    const ticketNumber = `${ticketPrefix}-${String(ticketSeq).padStart(2, '0')}`;
+    let dailySequence = currentActiveQueues.length + 1;
+    try {
+      const countRes = await query(
+        'SELECT COUNT(*) FROM queue_reservations WHERE tenant_id = $1 AND DATE(created_at) = CURRENT_DATE',
+        [tenantId]
+      );
+      if (countRes.rows.length > 0) {
+        const row = countRes.rows[0];
+        if (row && typeof row === 'object' && 'count' in row) {
+          dailySequence = Number(row.count) + 1;
+        }
+      }
+    } catch {}
+    const ticketNumber = `${ticketPrefix}-${String(dailySequence).padStart(2, '0')}`;
 
     let dbReservationId = inMemoryQueues.length + 1;
     try {
@@ -203,6 +220,9 @@ export function createQueueRouter(io: SocketIOServer): Router {
     };
 
     inMemoryQueues.push(newReservation);
+    if (inMemoryQueues.length > 50) {
+      inMemoryQueues.splice(0, inMemoryQueues.length - 50);
+    }
 
     const responsePayload = {
       ticketNumber,

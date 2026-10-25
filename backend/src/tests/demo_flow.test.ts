@@ -57,7 +57,7 @@ describe('💈 Simulasi Alur Penuh (End-to-End Live Workflow 3 Mitra)', () => {
         tenantSlug: 'rr-barber-studio',
         customerName: 'Budi Santoso',
         customerPhone: '081987654321',
-        serviceId: 3, // Signature Haircut
+        serviceId: 4, // Signature Haircut (RR Studio)
         barberId: 4, // Kapster 1
         bookingType: 'online_app',
       }),
@@ -79,7 +79,7 @@ describe('💈 Simulasi Alur Penuh (End-to-End Live Workflow 3 Mitra)', () => {
         tenantSlug: 'stupid-culture',
         customerName: 'Rian Permana',
         customerPhone: '085712345678',
-        serviceId: 4, // Gentleman Haircut (AC)
+        serviceId: 7, // Gentleman Haircut AC (Stupid Culture)
         barberId: 'smart',
         bookingType: 'online_app',
       }),

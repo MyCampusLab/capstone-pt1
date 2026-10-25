@@ -29,19 +29,34 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // --- PROTEKSI GLOBAL (LOW RISK) ---
-    match /{document=**} {
-      // BACA: Tetap 'true' agar fitur pencarian barbershop, list layanan, 
-      // dan navigasi tidak ada yang macet (Low Risk of Bugs)
+    // --- KOLEKSI PUBLIK (BACA PUBLIK, TULIS KHUSUS ADMIN) ---
+    match /barbershops/{shopId} {
       allow read: if true;
-      
-      // TULIS: Wajib Login. Menutup celah hacker/bot luar yang tidak punya akun.
-      // Admin memiliki akses penuh.
-      allow write: if isAuthenticated() || isAdmin();
-      
-      // PROTEKSI PENGHAPUSAN: Hanya admin yang boleh hapus data apapun.
-      // Menghindari insiden data hilang karena kesalahan user/hacker.
+      allow write: if isAdmin();
+    }
+
+    match /barbermen/{barberId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /tenants/{tenantId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // --- ANTREAN / QUEUES (CUSTOMER HANYA BISA CREATE & AKSES TIKET SENDIRI) ---
+    match /queues/{queueId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAdmin() || (isAuthenticated() && resource.data.customer_id == request.auth.uid);
       allow delete: if isAdmin();
+    }
+
+    // --- DEFAULT RULE RESTRICTION (ANTI-WILDCARD OVERWRITE) ---
+    match /{document=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
     }
   }
 }
