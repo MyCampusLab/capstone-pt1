@@ -12,6 +12,8 @@ class FakeQueueService implements QueueServiceContract {
   bool submitCalled = false;
 
   FakeQueueService({this.byId, this.byResolve});
+  @override
+  Future<dynamic> createQueue(Map<String, dynamic> queueData) async => null;
 
   @override
   Future<Queue?> getQueueById(String id) async => byId;
