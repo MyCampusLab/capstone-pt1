@@ -54,16 +54,65 @@ class BarbershopService {
       debugPrint("END DEBUG FIRESTORE FETCH");
 
       final list = snapshot.docs.map((doc) => Barbershop.fromFirestore(doc)).toList();
+      final result = list.isNotEmpty ? list : _getPartnerBarbershopsStatic();
       
-      // Update cache
-      _cachedBarbershops = list;
+      // Update cache dengan data valid
+      _cachedBarbershops = result;
       _lastCacheTime = DateTime.now();
       
-      return list;
+      return result;
     } catch (e) {
-      debugPrint('Error getAllBarbershops: $e');
-      return [];
+      debugPrint('Error getAllBarbershops: $e, using partner barbershops fallback');
+      final fallback = _getPartnerBarbershopsStatic();
+      _cachedBarbershops = fallback;
+      _lastCacheTime = DateTime.now();
+      return fallback;
     }
+  }
+  /// Data statis terverifikasi 3 mitra barbershop untuk pengujian offline / skripsi
+  static List<Barbershop> _getPartnerBarbershopsStatic() {
+    return [
+      Barbershop(
+        id: 'febrian-barbershop',
+        name: 'Febrian Barbershop',
+        addres: 'Mejasem Barat, Kec. Kramat, Kab. Tegal',
+        googleMapsUrl: 'https://share.google/DoR5RxMYsNkld66Qf',
+        imageUrl: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800',
+        services: ['Potong Rambut Standar', 'Skin Fade & Beard', 'Pewarnaan'],
+        facilities: ['AC', 'Free WiFi', 'Lounge', 'Full Music'],
+        openHour: 9,
+        closeHour: 21,
+        isOpen: true,
+        isActive: true,
+      ),
+      Barbershop(
+        id: 'rr-barber-studio',
+        name: 'RR Barber Studio',
+        addres: 'Tegal, Jawa Tengah',
+        googleMapsUrl: 'https://share.google/aCDF3ysRtOByKVCkA',
+        imageUrl: 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=800',
+        services: ['Signature Haircut', 'Fade Haircut', 'Coloring'],
+        facilities: ['AC', 'Signature Styling', 'Coffee & Tea'],
+        openHour: 10,
+        closeHour: 21,
+        isOpen: true,
+        isActive: true,
+      ),
+      Barbershop(
+        id: 'stupid-culture',
+        name: 'Stupid Culture Barbershop',
+        addres: 'Jl. Kapten Ismail No. 20, Kota Tegal (depan SJT Custom)',
+        imageUrl: 'https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=800',
+        services: ['Gentleman Haircut (AC)', 'Taper / Skin Fade', 'Hair Coloring'],
+        facilities: ['AC', 'Modern Styling', 'Music', 'Beverages'],
+        openHour: 9,
+        closeHour: 21,
+        isOpen: true,
+        isActive: true,
+        whatsappNumber: '0857-2756-6125',
+        instagramUrl: 'https://www.instagram.com/stup.idculture/',
+      ),
+    ];
   }
 
   // -----------------------

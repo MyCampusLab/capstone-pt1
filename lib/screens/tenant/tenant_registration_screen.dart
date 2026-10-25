@@ -133,7 +133,7 @@ class _TenantRegistrationScreenState extends State<TenantRegistrationScreen> {
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(
         builder: (_) => HomeScreen(
-          initialIndex: 3, // Profile tab
+          initialIndex: 2, // Profile tab (index 2 setelah pembersihan tab AI)
           currentUserId: widget.currentUserId,
           barbershopService: widget.barbershopService,
           locationService: widget.locationService,
@@ -819,7 +819,7 @@ class _TenantContinueScreenState extends State<TenantContinueScreen> {
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(
         builder: (_) => HomeScreen(
-          initialIndex: 3, // Profile tab
+          initialIndex: 2, // Profile tab (index 2 setelah pembersihan tab AI)
           currentUserId: widget.currentUserId,
           barbershopService: widget.barbershopService,
           locationService: widget.locationService,

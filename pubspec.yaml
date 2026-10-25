@@ -31,7 +31,6 @@ dependencies:
   google_sign_in: ^6.2.1
   flutter_secure_storage: ^8.0.0
 
-  google_mlkit_face_detection: ^0.11.0
   image_picker: ^1.1.2
   permission_handler: ^12.0.1
   url_launcher: ^6.1.7
@@ -41,14 +40,12 @@ dependencies:
   geocoding: ^4.0.0
   flutter_localizations:
     sdk: flutter
-  flutter_markdown: ^0.7.7+1
   shared_preferences: ^2.5.4
   connectivity_plus: ^7.0.0
   internet_connection_checker_plus: ^2.9.1+2
   flutter_native_splash: ^2.4.0
   firebase_app_check: ^0.3.1+1
   sentry_flutter: ^9.9.2
-  mailer: ^6.6.0
   http_parser: ^4.1.2
   dio: ^5.9.0
   flutter_image_compress: ^2.4.0

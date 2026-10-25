@@ -12,8 +12,7 @@ import 'package:geges_smartbarber/services/auth_service.dart';
 import 'package:geges_smartbarber/widgets/app_image.dart';
 import 'package:geges_smartbarber/screens/customer/tabs/barbershop_detail_screen.dart';
 import 'package:geges_smartbarber/screens/customer/tabs/profile_screen.dart';
-import 'package:geges_smartbarber/screens/customer/tabs/chat_assistant_screen.dart';
-import 'package:geges_smartbarber/screens/customer/tabs/stylescan_screen.dart';
+import 'package:geges_smartbarber/screens/customer/tabs/my_bookings_screen.dart';
 import 'package:geges_smartbarber/screens/customer/notifications_screen.dart';
 import 'package:geges_smartbarber/widgets/skeleton_card.dart';
 import 'package:geolocator/geolocator.dart';
@@ -61,7 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override void initState() {
     super.initState();
-    _selectedIndex = widget.initialIndex;
+    _selectedIndex = widget.initialIndex.clamp(0, 2);
     _pageController = PageController(initialPage: _selectedIndex);
     _barbershopService = widget.barbershopService ?? BarbershopService();
     _locationService = widget.locationService ?? LocationService();
@@ -428,8 +427,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final l10n = AppLocalizations.of(context)!;
     final List<Widget> widgetOptions = <Widget>[
       _buildHomePageBody(),
-      const StyleScanScreen(),
-      ChatAssistantScreen(authService: widget.authService),
+      MyBookingsScreen(
+        queueService: _queueService,
+        currentUserId: widget.currentUserId,
+      ),
       ProfileScreen(authService: widget.authService),
     ];
 
@@ -444,10 +445,10 @@ class _HomeScreenState extends State<HomeScreen> {
             items: [
               BottomNavigationBarItem(
                   icon: const Icon(Icons.home_filled), label: l10n.home),
-              BottomNavigationBarItem(
-                  icon: const Icon(Icons.camera_alt), label: l10n.styleScan),
-              BottomNavigationBarItem(
-                  icon: const Icon(Icons.chat_bubble), label: l10n.chatbot),
+              const BottomNavigationBarItem(
+                  icon: Icon(Icons.receipt_long_outlined),
+                  activeIcon: Icon(Icons.receipt_long),
+                  label: 'Antrean'),
               BottomNavigationBarItem(
                   icon: const Icon(Icons.person_outline), label: l10n.profileTab)
             ],

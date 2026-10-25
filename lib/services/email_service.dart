@@ -1,83 +1,38 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:mailer/mailer.dart';
-import 'package:mailer/smtp_server.dart';
+import 'email_outbox_service.dart';
 
 class EmailService {
-  // --- KONFIGURASI GMAIL SMTP ---
-  // Ganti dengan email & App Password Anda
-  // Cara dapat App Password:
-  // 1. Buka Akun Google -> Keamanan
-  // 2. Aktifkan Verifikasi 2 Langkah (2FA)
-  // 3. Cari "App Passwords" (Sandi Aplikasi)
-  // 4. Buat baru, namai "Geges App", copy password 16 digitnya.
-  static const String _username = 'irsydfchrynto@gmail.com';
-  static const String _password = 'tfge irpi vqaw snhd'; 
-
-  // Singleton
   static final EmailService _instance = EmailService._internal();
   factory EmailService() => _instance;
   EmailService._internal();
 
-  /// Mengirim Email Sambutan + Pengingat Verifikasi Akun
+  final EmailOutboxService _outbox = EmailOutboxService();
+
+  /// Mengirim Email Sambutan via Outbox Queue (12-Factor III: Zero hardcoded credentials)
   Future<void> sendWelcomeEmail(String name, String email) async {
-    final message = Message()
-      ..from = Address(_username, 'Geges Smart Barber')
-      ..recipients.add(email)
-      ..subject = 'Selamat Datang di Geges Smart Barber!'
-      ..html = '''
-        <h1>Halo, $name! 👋</h1>
-        <p>Terima kasih telah bergabung.</p>
-        <hr>
-        <h3 style="color: red;">⚠ PENTING: Verifikasi Akun</h3>
-        <p>Link verifikasi resmi telah dikirim oleh sistem Firebase.</p>
-        <p><b>Mohon cek folder SPAM / JUNK email Anda jika tidak ada di Inbox.</b></p>
-        <p>Anda harus klik link tersebut untuk bisa Login.</p>
-        <br>
-        <p>Salam,<br>Tim Geges</p>
-      ''';
-
-    await _send(message);
-  }
-
-  /// Mengirim Email Konfirmasi Pendaftaran Tenant
-  Future<void> sendTenantRegistrationEmail(String shopName, String ownerEmail) async {
-    final message = Message()
-      ..from = Address(_username, 'Geges Smart Barber')
-      ..recipients.add(ownerEmail)
-      ..subject = 'Pendaftaran Diterima: $shopName'
-      ..html = '''
-        <h1>Halo Owner $shopName,</h1>
-        <p>Pendaftaran kemitraan Anda sedang kami proses.</p>
-        <p>Mohon tunggu verifikasi admin dalam 1x24 jam.</p>
-        <p>Pantau status pendaftaran di menu Profil aplikasi.</p>
-      ''';
-
-    await _send(message);
-  }
-
-  // --- COMPATIBILITY (Biarkan kosong agar kode lama tidak error) ---
-  Future<void> sendVerificationReminder(String name, String email) async {}
-
-  // --- INTERNAL SENDER ---
-  Future<void> _send(Message message) async {
-    // FIX: Jangan kirim email jika sedang dalam environment TEST
-    if (Platform.environment.containsKey('FLUTTER_TEST')) {
-      debugPrint('[EmailService] Mode Test terdeteksi. Melewatkan pengiriman email.');
-      return;
-    }
-
-    if (_username.startsWith('GANTI')) {
-      debugPrint('[EmailService] Gagal: Konfigurasi Email/Password belum diset.');
-      return;
-    }
-
     try {
-      final smtpServer = gmail(_username, _password);
-      await send(message, smtpServer);
-      debugPrint('[EmailService] Email terkirim ke ${message.recipients.first}');
+      await _outbox.queueEmail(
+        to: email,
+        subject: 'Selamat Datang di Geges Smart Barber!',
+        body: 'Halo $name, terima kasih telah bergabung.',
+        metadata: {'type': 'welcome', 'recipient_name': name},
+      );
     } catch (e) {
-      debugPrint('[EmailService] Gagal kirim email: $e');
+      debugPrint('[EmailService] Gagal antrekan welcome email: $e');
+    }
+  }
+
+  /// Mengirim Email Konfirmasi Pendaftaran Tenant via Outbox Queue
+  Future<void> sendTenantRegistrationEmail(String shopName, String ownerEmail) async {
+    try {
+      await _outbox.queueEmail(
+        to: ownerEmail,
+        subject: 'Pendaftaran Diterima: $shopName',
+        body: 'Pendaftaran kemitraan $shopName sedang diproses.',
+        metadata: {'type': 'tenant_registration', 'shop_name': shopName},
+      );
+    } catch (e) {
+      debugPrint('[EmailService] Gagal antrekan tenant registration email: $e');
     }
   }
 }

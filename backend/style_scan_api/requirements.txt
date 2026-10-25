@@ -1,6 +1,0 @@
-flask>=2.0
-flask-cors>=3.0
-ultralytics>=8.0
-opencv-python-headless>=4.7
-numpy>=1.22
-gunicorn>=21.0

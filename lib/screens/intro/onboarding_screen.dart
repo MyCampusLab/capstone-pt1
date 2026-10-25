@@ -56,9 +56,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     },
     {
       "image": "assets/images/onboarding_bot.png",
-      "title": "Smart Assistant",
+      "title": "Transparent Queue",
       "subtitle":
-          "Get personalized recommendations and instant booking help through our AI chatbot.",
+          "Monitor real-time queue status, fair barber assignment, and estimated service duration.",
     },
   ];
 

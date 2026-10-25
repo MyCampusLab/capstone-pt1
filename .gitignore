@@ -1,29 +1,23 @@
-# Miscellaneous
-*.class
-*.log
-*.pyc
-*.swp
-.DS_Store
-.atom/
-.build/
-.buildlog/
-.history
-.svn/
-.swiftpm/
-migrate_working_dir/
+# Environment & Secrets (12-Factor III: Strict protection)
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
 
-# IntelliJ related
-*.iml
-*.ipr
-*.iws
-.idea/
+# Node.js & TypeScript
+node_modules/
+dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
+# Docker & Backing Services Volumes
+postgres_data/
+minio_data/
 
-# Flutter/Dart/Pub related
+# Flutter / Dart / Pub
 **/doc/api/
 **/ios/Flutter/.last_build_id
 .dart_tool/
@@ -33,19 +27,21 @@ migrate_working_dir/
 /build/
 /coverage/
 
-# Symbolication related
-app.*.symbols
-
-# Obfuscation related
-app.*.map.json
-
-# Android Studio will place build artifacts here
+# Android build artifacts
 /android/app/debug
 /android/app/profile
 /android/app/release
 
+# OS and Editor junk
+.DS_Store
+*.swp
+*.class
+*.pyc
+*.iml
+*.ipr
+*.iws
+.idea/
 
-DOKUMENTASI_FINAL_OVERVIEW.md
-DOKUMENTASI_INLINE_AUTH_SCREENS.md
-scripts/*.json
-scripts/seeder_node/node_modules/
+# Testing artifacts
+test_report.json
+*.apk
