@@ -11,9 +11,9 @@ export async function seedDatabase(): Promise<void> {
   // 2. Insert 3 Barbershop Mitra
   const tenantRows = await query(`
     INSERT INTO tenants (slug, name, address, phone, chairs_count) VALUES
-    ('febrian-barbershop', 'Febrian Barbershop', 'Mejasem Barat, Kec. Kramat, Kab. Tegal', '081234567890', 4),
-    ('rr-barber-studio', 'RR Barber Studio', 'Tegal, Jawa Tengah', '081234567891', 3),
-    ('stupid-culture', 'Stupid Culture Barbershop', 'Jl. Kapten Ismail No. 20, Kota Tegal', '085727566125', 3)
+    ('febrian-barbershop', 'Febrian BarberShop', 'Jl. Pala Raya No.Desa, Kademangan, Mejasem Barat, Kec. Kramat, Kab. Tegal 52181', '087896903760', 4),
+    ('rr-barber-studio', 'RR Barber Studio', 'Samping Big Laundry, Jl. Projosumarto 1, Kaladawa, Kec. Talang, Kab. Tegal 52193', '088226323086', 3),
+    ('stupid-culture', 'Stupid Culture Barbershop', 'Jl. Kapten Ismail No. 20, Kota Tegal (depan SJT Custom)', '085727566125', 3)
     RETURNING id, slug, name;
   `);
 
