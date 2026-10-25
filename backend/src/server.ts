@@ -7,6 +7,8 @@ import { env } from './config/env.js';
 import { tenantRouter } from './routes/tenant.routes.js';
 import { createQueueRouter } from './routes/queue.routes.js';
 import { mediaRouter } from './routes/media.routes.js';
+import { createCashierRouter } from './routes/cashier.routes.js';
+import { reportRouter } from './routes/report.routes.js';
 
 const logger = pino({
   level: env.LOG_LEVEL,
@@ -55,6 +57,8 @@ app.use('/api/tenants', tenantRouter);
 app.use('/api/queue', createQueueRouter(io));
 app.use('/api/fuzzy', createQueueRouter(io));
 app.use('/api/media', mediaRouter);
+app.use('/api/cashier', createCashierRouter(io));
+app.use('/api/reports', reportRouter);
 
 // Start server listening
 if (process.env.NODE_ENV !== 'test') {

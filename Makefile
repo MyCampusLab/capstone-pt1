@@ -25,7 +25,7 @@ test:
 	cd backend && bun test
 
 db-up:
-	cd backend && docker compose up -d
+	cd backend && docker compose up -d postgres
 
 db-down:
 	cd backend && docker compose down
