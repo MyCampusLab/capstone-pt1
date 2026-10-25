@@ -13,6 +13,7 @@ import 'package:geges_smartbarber/widgets/app_image.dart';
 import 'package:geges_smartbarber/screens/customer/tabs/barbershop_detail_screen.dart';
 import 'package:geges_smartbarber/screens/customer/tabs/profile_screen.dart';
 import 'package:geges_smartbarber/screens/customer/tabs/my_bookings_screen.dart';
+import 'package:geges_smartbarber/services/http_queue_repository.dart';
 import 'package:geges_smartbarber/screens/customer/notifications_screen.dart';
 import 'package:geges_smartbarber/widgets/skeleton_card.dart';
 import 'package:geolocator/geolocator.dart';
@@ -371,7 +372,9 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildHeader(),
               const SizedBox(height: 5),
               _buildSearchBar(),
-              const SizedBox(height: 24),
+              const SizedBox(height: 10),
+              _buildActiveTicketBanner(),
+              const SizedBox(height: 14),
               ValueListenableBuilder<TextEditingValue>(
                   valueListenable: _searchController,
                   builder: (context, value, _) => value.text.isEmpty
@@ -389,6 +392,70 @@ class _HomeScreenState extends State<HomeScreen> {
             ]
           ),
         ));
+  }
+  Widget _buildActiveTicketBanner() {
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: HttpQueueRepository().getActiveTicketLocally(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || snapshot.data == null) {
+          return const SizedBox.shrink();
+        }
+        final ticket = snapshot.data!;
+        final ticketNumber = ticket['ticketNumber']?.toString() ?? 'S-01';
+        final shopName = ticket['tenantSlug']?.toString().replaceAll('-', ' ').toUpperCase() ?? 'BARBERSHOP';
+        final estMins = ticket['estimatedDurationMinutes']?.toString() ?? '20';
+        final barberName = (ticket['assignedBarber'] is Map)
+            ? ticket['assignedBarber']['name']?.toString() ?? 'Kapster'
+            : 'Kapster';
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 6.0),
+          child: Container(
+            padding: const EdgeInsets.all(14.0),
+            decoration: BoxDecoration(
+              color: const Color(0xFF241E17),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: kBrownAccent.withValues(alpha: 0.5), width: 1.5),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: kBrownAccent,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Column(
+                    children: [
+                      const Text('TIKET', style: TextStyle(color: Colors.black, fontSize: 9, fontWeight: FontWeight.bold)),
+                      Text(ticketNumber, style: const TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.w900)),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(shopName, style: const TextStyle(color: kBrownAccent, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                      const SizedBox(height: 2),
+                      Text('Kapster: $barberName', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 2),
+                      Text('Estimasi: ~$estMins menit', style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.arrow_forward_ios, color: kBrownAccent, size: 16),
+                  onPressed: () => _onItemTapped(1),
+                  tooltip: 'Lihat Antrean',
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildSearch(String q) {
