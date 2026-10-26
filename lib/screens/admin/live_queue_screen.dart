@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geges_smartbarber/models/queue.dart';
 import 'package:geges_smartbarber/models/service.dart';
+import 'package:geges_smartbarber/models/barberman.dart';
+import 'package:geges_smartbarber/services/barbershop_service.dart';
 import 'package:geges_smartbarber/services/queue_service.dart';
 import 'package:geges_smartbarber/widgets/admin/queue_card.dart';
 import 'package:geges_smartbarber/widgets/utility/loading_widget.dart';
@@ -24,6 +26,9 @@ class LiveQueueScreen extends StatefulWidget {
 class _LiveQueueScreenState extends State<LiveQueueScreen> {
   final QueueService _queueService = QueueService();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final BarbershopService _barbershopService = BarbershopService();
+  List<Barberman> _shopBarbers = [];
+  String? _selectedBarberId;
   
   late List<String> _currentStatusFilter;
   String _activeFilterLabel = 'Live';
@@ -42,6 +47,7 @@ class _LiveQueueScreenState extends State<LiveQueueScreen> {
     _timer = Timer.periodic(const Duration(minutes: 1), (_) {
       if (mounted) { setState(() {}); _queueService.cancelExpiredBookings(widget.barbershopId); }
     });
+    _loadShopBarbers();
   }
 
   @override void dispose() { _timer?.cancel(); super.dispose(); }
@@ -49,6 +55,12 @@ class _LiveQueueScreenState extends State<LiveQueueScreen> {
   Future<void> _startService(Queue q) async { try { await _queueService.startService(q.id); } catch (_) {} }
   Future<void> _finishService(Queue q) async { try { await _queueService.finishService(q.id, q.startTime); } catch (_) {} }
   Future<void> _cancelQueue(Queue q) async { try { await _queueService.cancelQueue(q.id); } catch (_) {} }
+  Future<void> _loadShopBarbers() async {
+    try {
+      final barbers = await _barbershopService.getBarbermenByShop(widget.barbershopId);
+      if (mounted) setState(() => _shopBarbers = barbers);
+    } catch (_) {}
+  }
 
   void _updateFilter(String label, List<String> statuses) {
     setState(() {
@@ -142,7 +154,7 @@ class _LiveQueueScreenState extends State<LiveQueueScreen> {
         elevation: 0,
         centerTitle: true,
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(60),
+          preferredSize: const Size.fromHeight(104),
           child: _buildFilterBar(),
         ),
       ),
@@ -155,7 +167,10 @@ class _LiveQueueScreenState extends State<LiveQueueScreen> {
           if (snapshot.hasError) return Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
           if (snapshot.connectionState == ConnectionState.waiting && _detailsMap.isEmpty) return const LoadingWidget();
           
-          final list = snapshot.data ?? [];
+          var list = snapshot.data ?? [];
+          if (_selectedBarberId != null) {
+            list = list.where((q) => q.barbermanId == _selectedBarberId).toList();
+          }
           if (list.isEmpty) {
             return Center(
               child: Column(
@@ -211,18 +226,71 @@ class _LiveQueueScreenState extends State<LiveQueueScreen> {
 
   Widget _buildFilterBar() {
     return Container(
-      height: 60,
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          _filterChip('Live', ['booked', 'ongoing']),
-          _filterChip('Pending', ['waiting', 'awaiting_payment', 'cancellation_requested']),
-          _filterChip('Selesai', ['served']),
-          _filterChip('Batal', ['cancelled']),
-          _filterChip('Semua', []),
+          SizedBox(
+            height: 42,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              children: [
+                _filterChip('Live', ['booked', 'ongoing']),
+                _filterChip('Pending', ['waiting', 'awaiting_payment', 'cancellation_requested']),
+                _filterChip('Selesai', ['served']),
+                _filterChip('Batal', ['cancelled']),
+                _filterChip('Semua', []),
+              ],
+            ),
+          ),
+          const SizedBox(height: 6),
+          SizedBox(
+            height: 38,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              children: [
+                _barberChip('Semua Kursi', null),
+                ..._shopBarbers.map((b) => _barberChip('Kursi: ${b.name}', b.id)),
+              ],
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _barberChip(String label, String? barberId) {
+    final bool isSelected = _selectedBarberId == barberId;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: ChoiceChip(
+        avatar: Icon(
+          barberId == null ? Icons.groups_outlined : Icons.chair_outlined,
+          size: 14,
+          color: isSelected ? Colors.black : AppColors.primary,
+        ),
+        label: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.black : Colors.white70,
+            fontWeight: FontWeight.w700,
+            fontSize: 12,
+          ),
+        ),
+        selected: isSelected,
+        onSelected: (val) {
+          if (val) setState(() => _selectedBarberId = barberId);
+        },
+        selectedColor: AppColors.primary,
+        backgroundColor: AppColors.surface,
+        side: BorderSide(
+          color: isSelected ? AppColors.primary : AppColors.border,
+          width: 0.8,
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        showCheckmark: false,
       ),
     );
   }
@@ -230,15 +298,27 @@ class _LiveQueueScreenState extends State<LiveQueueScreen> {
   Widget _filterChip(String label, List<String> statuses) {
     final bool isSelected = _activeFilterLabel == label;
     return Padding(
-      padding: const EdgeInsets.only(right: 10),
+      padding: const EdgeInsets.only(right: 8),
       child: ChoiceChip(
-        label: Text(label, style: TextStyle(color: isSelected ? Colors.black : Colors.white70, fontWeight: FontWeight.bold, fontSize: 13)),
+        label: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.black : Colors.white70,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
+        ),
         selected: isSelected,
-        onSelected: (val) { if (val) _updateFilter(label, statuses); },
-        selectedColor: kBrownAccent,
-        backgroundColor: kDarkSurface,
-        side: BorderSide(color: isSelected ? kBrownAccent : Colors.white.withValues(alpha: 0.05)),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        onSelected: (val) {
+          if (val) _updateFilter(label, statuses);
+        },
+        selectedColor: AppColors.primary,
+        backgroundColor: AppColors.surface,
+        side: BorderSide(
+          color: isSelected ? AppColors.primary : AppColors.border,
+          width: 0.8,
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         showCheckmark: false,
       ),
     );

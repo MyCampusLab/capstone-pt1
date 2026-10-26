@@ -1,20 +1,16 @@
 name: Flutter tests
-
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
   workflow_dispatch: {}
-
 jobs:
   fast-tests:
     name: Fast unit & widget tests
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
       - name: Cache Pub packages
         uses: actions/cache@v4
         with:
@@ -22,20 +18,15 @@ jobs:
           key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
           restore-keys: |
             ${{ runner.os }}-pub-
-
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.27.1'
           channel: 'stable'
           cache: true
-
       - name: Install dependencies
         run: flutter pub get
-
       - name: Run analyzer
         run: flutter analyze
-
       - name: Run fast unit & widget tests (exclude integration/e2e)
         env:
           CI: true
@@ -47,24 +38,20 @@ jobs:
             echo "Running fast tests: $files"
             flutter test $files --coverage
           fi
-
       - name: Upload coverage (fast tests)
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: coverage-lcov
           path: coverage/lcov.info
-
   slow-tests:
     name: Slow / integration tests (main or manual only)
     runs-on: ubuntu-latest
     needs: fast-tests
     if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     timeout-minutes: 45
-
     steps:
       - uses: actions/checkout@v4
-
       - name: Cache Pub packages
         uses: actions/cache@v4
         with:
@@ -72,17 +59,13 @@ jobs:
           key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
           restore-keys: |
             ${{ runner.os }}-pub-
-
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.27.1'
           channel: 'stable'
           cache: true
-
       - name: Install dependencies
         run: flutter pub get
-
       - name: Run slow / integration tests (integration|e2e)
         env:
           CI: true
@@ -92,10 +75,8 @@ jobs:
             echo "No slow/integration test files found."
           else
             echo "Running slow tests: $files"
-            # Run without coverage to save time; these tests may be longer and require different env
             flutter test $files || true
           fi
-
       - name: Upload slow test logs
         if: always()
         uses: actions/upload-artifact@v4

@@ -5,6 +5,9 @@ import { query } from '../database/db.js';
 import { FuzzySugenoQueueEstimator } from '../algorithms/fuzzySugeno.js';
 import { SmartDispatchEngine, type ActiveBarber, type ActiveQueueItem } from '../algorithms/smartDispatch.js';
 import { FALLBACK_TENANTS, FALLBACK_BARBERS, FALLBACK_SERVICES } from '../types/models.js';
+import { createSlidingWindowLimiter } from '../middleware/rateLimiter.js';
+
+const bookingRateLimiter = createSlidingWindowLimiter(60_000, 15);
 
 export const inMemoryQueues: ActiveQueueItem[] = [];
 
@@ -37,7 +40,7 @@ export function createQueueRouter(io: SocketIOServer): Router {
     res.json(result);
   });
 
-  router.post('/book', async (req: Request, res: Response) => {
+  router.post('/book', bookingRateLimiter, async (req: Request, res: Response) => {
     const parseResult = bookingSchema.safeParse(req.body);
     if (!parseResult.success) {
       res.status(400).json({ error: 'Data booking tidak valid', details: parseResult.error.format() });

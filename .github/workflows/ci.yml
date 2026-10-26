@@ -1,0 +1,71 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+jobs:
+  backend-checks:
+    name: Backend Tests & Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        working-directory: backend
+        run: bun install
+
+      - name: TypeScript Static Analysis
+        working-directory: backend
+        run: bun x tsc --noEmit
+
+      - name: Run Algorithmic & Concurrency Tests
+        working-directory: backend
+        env:
+          CI: true
+        run: |
+          files=$(git ls-files 'backend/src/tests/**/*.test.ts' || true)
+          if [ -z "$files" ]; then
+            echo "No backend test files found."
+          else
+            echo "Running backend tests: $files"
+            bun test $files
+          fi
+
+  flutter-checks:
+    name: Flutter Analyze & Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run Flutter Analyze
+        run: flutter analyze
+
+      - name: Run Fast Unit & Widget Tests
+        env:
+          CI: true
+        run: |
+          files=$(git ls-files 'test/**/*_test.dart' | grep -Ev 'integration|e2e' || true)
+          if [ -z "$files" ]; then
+            echo "No fast test files found."
+          else
+            echo "Running fast tests: $files"
+            flutter test $files
+          fi
