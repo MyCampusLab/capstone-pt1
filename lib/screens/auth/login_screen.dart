@@ -1,28 +1,17 @@
-// ==========================================
-// file: lib/screens/auth/login_screen.dart
-// deskripsi: layar login untuk masuk ke aplikasi
-// penjelasan:
-//   - user memasukkan email & password
-//   - ada tombol login biasa & google sign-in
-//   - ada tombol forgot password untuk reset password
-//   - setelah login berhasil, navigasi ke home (customer) atau admin dashboard
-// ==========================================
-
+// lib/screens/auth/login_screen.dart
 import 'package:flutter/material.dart';
-import 'package:flutter/gestures.dart';
+import 'package:geges_smartbarber/config/app_colors.dart';
 import 'package:geges_smartbarber/l10n/generated/app_localizations.dart';
 import 'package:geges_smartbarber/services/auth_service.dart';
 import 'package:geges_smartbarber/screens/customer/home_screen.dart';
 import 'package:geges_smartbarber/screens/admin/admin_dashboard.dart';
 import 'package:geges_smartbarber/screens/auth/register_screen.dart';
 
-// penjelasan statefulwidget:
-// - loginscreen adalah statefulwidget karena ada state yang berubah (error message, loading, password visible)
-// - setstate() dipanggil untuk update ui saat ada perubahan
 class LoginScreen extends StatefulWidget {
   final AuthServiceBase? authService;
   final WidgetBuilder? homeBuilder;
   final WidgetBuilder? adminBuilder;
+
   const LoginScreen({
     super.key,
     this.authService,
@@ -35,66 +24,35 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  // penjelasan controller:
-  // - textEditingController digunakan untuk menangkap text yang user ketik di TextField
-  // - _emailController untuk menangkap input email
-  // - _passwordController untuk menangkap input password
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  // Focus nodes for inputs (used to animate focused state)
   late final FocusNode _emailFocusNode;
   late final FocusNode _passwordFocusNode;
 
-  // penjelasan authservice:
-  // - authservice adalah service yang menangani semua operasi autentikasi (login, register, google sign-in)
-  // - sudah diimplementasikan di lib/services/auth_service.dart
   AuthServiceBase? _authService;
-
-  // penjelasan variabel state:
-  // - _errorMessage: menampilkan pesan error jika login gagal (email tidak terdaftar, password salah, dll)
-  // - _isLoading: flag untuk menampilkan loading spinner saat proses login sedang berjalan
-  // - _obscurePassword: flag untuk menyembunyikan/menampilkan password (tombol mata)
   String _errorMessage = '';
   bool _isLoading = false;
-  bool _obscurePassword =
-      true; // made mutable to allow toggling password visibility
+  bool _obscurePassword = true;
 
-  // penjelasan warna tema:
-  // - kBrownAccent: warna coklat utama dari design system
-  // - kDarkGrey: warna background untuk input field
-  // - kHintText: warna teks hint/placeholder
-  static const Color kBrownAccent = Color(0xFFC3A47B);
-  static const Color kDarkGrey = Color(0xFF1E1E1E);
-  static const Color kHintText = Color(0xFF6B6B6B);
+
+  @override
+  void initState() {
+    super.initState();
+    _authService = widget.authService;
+    _emailFocusNode = FocusNode();
+    _passwordFocusNode = FocusNode();
+  }
 
   @override
   void dispose() {
-    // penjelasan dispose:
-    // - dispose() dipanggil saat widget dihancurkan
-    // - penting untuk melepaskan resources seperti controller untuk mencegah memory leak
-    // - harus selalu panggil super.dispose() di akhir
     _emailController.dispose();
     _passwordController.dispose();
-    // dispose focus nodes
     _emailFocusNode.dispose();
     _passwordFocusNode.dispose();
     super.dispose();
   }
 
-  @override
-  void initState() {
-    super.initState();
-    // Defer creation to when an operation is performed; allow tests to inject a fake AuthService
-    _authService = widget.authService;
-    // initialize focus nodes used for animated input styling
-    _emailFocusNode = FocusNode();
-    _passwordFocusNode = FocusNode();
-  }
-
-  // ========================================
-  // fungsi login dengan email & password
-  // ========================================
   void _login() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
@@ -105,12 +63,12 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    // Simple email format validation
     final emailRegex = RegExp(r"^[\w\.-]+@[\w\.-]+\.\w+");
     if (!emailRegex.hasMatch(email)) {
       setState(() => _errorMessage = l10n.errEmailFormat);
       return;
     }
+
     setState(() {
       _isLoading = true;
       _errorMessage = '';
@@ -119,7 +77,7 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final auth = _authService ?? AuthService();
       final result = await auth.signIn(email: email, password: password);
-      
+
       if (!mounted) return;
       setState(() => _isLoading = false);
 
@@ -137,95 +95,47 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // ========================================
-  // navigasi berdasarkan role user
-  // ========================================
   void _navigateByRole(String? role) {
-    // penjelasan:
-    // - role bisa 'customer' atau 'admin_owner'
-    // - jika customer, navigasi ke HomeScreen
-    // - jika admin_owner, navigasi ke AdminDashboardScreen
-    // - pushReplacement() berarti ganti layar ini dengan layar baru (jadi tidak bisa kembali ke login)
-
     final l10n = AppLocalizations.of(context)!;
     Widget targetScreen;
     if (role == 'customer') {
       targetScreen = widget.homeBuilder?.call(context) ?? const HomeScreen();
-    } else if (role == 'admin_owner' || role == 'owner' || role == 'admin') {
-      // Accept commonly used admin role variants in DB (admin_owner, owner, admin)
-      targetScreen =
-          widget.adminBuilder?.call(context) ?? const AdminDashboardScreen();
+    } else if (role == 'admin_owner' || role == 'owner' || role == 'admin' || role == 'super_admin') {
+      targetScreen = widget.adminBuilder?.call(context) ?? const AdminDashboardScreen();
     } else {
-      setState(
-        () => _errorMessage = l10n.errRoleInvalid(role ?? '<null>'),
-      );
+      setState(() => _errorMessage = l10n.errRoleInvalid(role ?? '<null>'));
       return;
     }
 
-    Navigator.of(
-      context,
-    ).pushReplacement(MaterialPageRoute(builder: (context) => targetScreen));
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (context) => targetScreen),
+    );
   }
 
-  // ========================================
-  // navigasi ke register screen
-  // ========================================
   void _goToRegister() {
-    // penjelasan:
-    // - fungsi ini dipanggil saat user tekan tombol "sign up"
-    // - navigasi ke RegisterScreen dengan transisi 0 (instant, tidak ada animasi)
-    // - kosongkan error message
-
     Navigator.pushReplacement(
       context,
       PageRouteBuilder(
-        pageBuilder: (context, animation1, animation2) =>
-            const RegisterScreen(),
+        pageBuilder: (context, a1, a2) => const RegisterScreen(),
         transitionDuration: Duration.zero,
-        reverseTransitionDuration: Duration.zero,
       ),
     );
-    if (mounted) setState(() => _errorMessage = '');
   }
 
-  // ========================================
-  // forgot password: kirim link reset ke email
-  // ========================================
   void _forgotPassword() async {
-    // penjelasan:
-    // - fungsi ini dipanggil saat user tekan "forgot password?"
-    // - jika email field kosong, tanya email melalui dialog
-    // - kirim link reset password ke email melalui firebase
-
     final email = _emailController.text.trim();
-    final l10n = AppLocalizations.of(context)!;
 
-    // penjelasan kondisi:
-    // - jika email kosong, tanyakan via dialog
-    // - jika user cancel, tampilkan snackbar
-    // - jika user input email, kirim reset email
     if (email.isEmpty) {
-      final typed = await _askForEmailDialog();
-      if (typed == null || typed.trim().isEmpty) {
-        _showSnackbar(
-          l10n.dialogResetHint, // Using hint as instruction "Enter email"
-          const Color(0xFFD32F2F),
-        );
-        return;
+      final inputEmail = await _askForEmailDialog();
+      if (inputEmail != null && inputEmail.isNotEmpty) {
+        _sendResetEmail(inputEmail);
       }
-      await _sendResetEmail(typed.trim());
-      return;
+    } else {
+      _sendResetEmail(email);
     }
-
-    await _sendResetEmail(email);
   }
 
-  // penjelasan fungsi helper:
-  // - fungsi ini mengirim reset password email ke firebase
-  // - tampilkan loading spinner selama proses
-  // - setelah selesai, tampilkan snackbar sukses/gagal
   Future<void> _sendResetEmail(String email) async {
-    setState(() => _isLoading = true);
     final l10n = AppLocalizations.of(context)!;
     try {
       final auth = _authService ?? AuthService();
@@ -234,35 +144,19 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _isLoading = false);
 
       if (res['success'] == true) {
-        _showSnackbar(
-          l10n.msgResetSent(email),
-          kBrownAccent,
-        );
+        _showSnackbar(l10n.msgResetSent(email), AppColors.success);
       } else {
-        _showSnackbar(
-          res['message'] ?? l10n.msgResetFail,
-          const Color(0xFFD32F2F),
-        );
+        _showSnackbar(res['message'] ?? l10n.msgResetFail, AppColors.danger);
       }
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      _showSnackbar(l10n.errGeneric(e.toString()), const Color(0xFFD32F2F));
+      _showSnackbar(l10n.errGeneric(e.toString()), AppColors.danger);
     }
   }
 
-  // ========================================
-  // google sign-in
-  // ========================================
   void _signInWithGoogle() async {
-    // penjelasan:
-    // - fungsi ini dipanggil saat user tekan tombol "continue with google"
-    // - panggil _authService.signInWithGoogle() untuk authenticate dengan google
-    // - jika sukses, navigasi ke home atau admin berdasarkan role
-    // - jika gagal, tampilkan error message
-
     final l10n = AppLocalizations.of(context)!;
-
     setState(() {
       _isLoading = true;
       _errorMessage = '';
@@ -278,32 +172,9 @@ class _LoginScreenState extends State<LoginScreen> {
       if (result['success'] == true) {
         _navigateByRole(result['role']);
       } else {
-        final message = result['message'] ?? 'google sign-in gagal.';
-        // Show a helpful snackbar and allow retry for recoverable auth errors (recaptcha/credential)
-        final isRecaptcha =
-            message.toLowerCase().contains('recaptcha') ||
-            message.toLowerCase().contains('captcha');
-        final isCredential =
-            message.toLowerCase().contains('credential') ||
-            message.toLowerCase().contains('oauth') ||
-            message.toLowerCase().contains('developer_error');
-        _showSnackbar(message, const Color(0xFFD32F2F));
+        final message = result['message'] ?? 'Google sign-in gagal.';
+        _showSnackbar(message, AppColors.danger);
         setState(() => _errorMessage = message);
-
-        if (isRecaptcha || isCredential) {
-          // Allow quick retry via snackbar action
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('$message'),
-              backgroundColor: const Color(0xFFD32F2F),
-              action: SnackBarAction(
-                label: l10n.btnRetry,
-                textColor: Colors.white,
-                onPressed: _signInWithGoogle,
-              ),
-            ),
-          );
-        }
       }
     } catch (e) {
       if (!mounted) return;
@@ -311,66 +182,40 @@ class _LoginScreenState extends State<LoginScreen> {
         _isLoading = false;
         _errorMessage = l10n.errGeneric(e.toString());
       });
-      // If error string contains recaptcha or credential hints, provide a retry
-      final msg = e.toString().toLowerCase();
-      final shouldOfferRetry =
-          msg.contains('recaptcha') ||
-          msg.contains('credential') ||
-          msg.contains('developer_error');
-      _showSnackbar(l10n.errGeneric(e.toString()), const Color(0xFFD32F2F));
-      if (shouldOfferRetry) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.errGeneric(e.toString())),
-            backgroundColor: const Color(0xFFD32F2F),
-            action: SnackBarAction(
-              label: l10n.btnRetry,
-              textColor: Colors.white,
-              onPressed: _signInWithGoogle,
-            ),
-          ),
-        );
-      }
+      _showSnackbar(l10n.errGeneric(e.toString()), AppColors.danger);
     }
   }
 
-  // ========================================
-  // dialog: tanya email untuk reset password
-  // ========================================
   Future<String?> _askForEmailDialog() async {
-    // penjelasan:
-    // - dialog ini muncul saat user tekan "forgot password?" tanpa input email
-    // - user bisa input email & tekan "kirim" atau tekan "batal"
-    // - mengembalikan email yang diinput atau null jika dibatalkan
-
     final l10n = AppLocalizations.of(context)!;
     String typed = '';
     return showDialog<String>(
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: Colors.black,
-          title: Text(
-            l10n.dialogResetTitle,
-            style: const TextStyle(color: Colors.white),
-          ),
+          backgroundColor: AppColors.surface,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(l10n.dialogResetTitle, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           content: TextField(
             keyboardType: TextInputType.emailAddress,
             style: const TextStyle(color: Colors.white),
-            decoration: InputDecoration(hintText: l10n.dialogResetHint),
+            decoration: InputDecoration(
+              hintText: l10n.dialogResetHint,
+              hintStyle: const TextStyle(color: AppColors.textMuted),
+              filled: true,
+              fillColor: AppColors.background,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
+            ),
             onChanged: (v) => typed = v,
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(null),
-              child: Text(l10n.dialogResetCancel),
+              onPressed: () => Navigator.pop(context, null),
+              child: Text(l10n.btnCancel, style: const TextStyle(color: AppColors.textMuted)),
             ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kBrownAccent,
-                foregroundColor: Colors.black,
-              ),
-              onPressed: () => Navigator.of(context).pop(typed),
+              onPressed: () => Navigator.pop(context, typed.trim()),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.black),
               child: Text(l10n.btnSend),
             ),
           ],
@@ -379,268 +224,248 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // ========================================
-  // Troubleshoot dialog: helper for auth errors (recaptcha / google sign-in / SHA-1)
-  // ========================================
-  void _showAuthTroubleshootDialog() {
-    if (!mounted) return;
-    final l10n = AppLocalizations.of(context)!;
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.troubleshootTitle),
-        content: SingleChildScrollView(
-          child: ListBody(
-            children: [
-              Text(l10n.troubleshootContent),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.btnClose),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ========================================
-  // helper: tampilkan snackbar di bawah layar
-  // ========================================
   void _showSnackbar(String msg, Color color) {
-    // penjelasan:
-    // - snackbar adalah notifikasi yang muncul di bawah layar
-    // - mounted check untuk memastikan widget masih ada di memory
-    // - backgroundColor color untuk warna snackbar (hijau sukses, merah error)
-
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: color));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: color, behavior: SnackBarBehavior.floating),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 24.0,
-              vertical: 40.0,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Logo
-                Image.asset(
-                  'assets/images/ivon.png',
-                  height: 120,
-                  errorBuilder: (context, error, stackTrace) =>
-                      const Icon(Icons.cut, color: kBrownAccent, size: 120),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  l10n.welcome,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
+                const SizedBox(height: 16),
+                
+                // Modern Hero Logo & Badge
+                Center(
+                  child: Container(
+                    width: 76,
+                    height: 76,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF2E2419), Color(0xFF1C1917)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(color: AppColors.primary.withValues(alpha: 0.5), width: 1.5),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withValues(alpha: 0.15),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.content_cut_rounded,
+                      color: AppColors.primary,
+                      size: 38,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  l10n.welcomeSubtitle,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white70, fontSize: 16),
-                ),
-                const SizedBox(height: 32),
-                _buildAuthTabs(
-                    isLogin: true,
-                    onSignUpTap: _goToRegister,
-                    loginLabel: l10n.signInTab,
-                    signUpLabel: l10n.signUp),
-                const SizedBox(height: 32),
+                const SizedBox(height: 20),
 
-                // Email
-                _buildTextField(
+                // Title & Subtitle
+                const Text(
+                  'SmartBarber',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Platform Antrean & Kasir Multi-Tenant Terpadu',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 28),
+
+                // Modern Pill Tab Selector
+                _buildAuthPillTabs(
+                  isLogin: true,
+                  onSignUpTap: _goToRegister,
+                  loginLabel: l10n.signInTab,
+                  signUpLabel: l10n.signUp,
+                ),
+                const SizedBox(height: 24),
+
+                // Email Input
+                _buildModernTextField(
                   controller: _emailController,
                   hintText: l10n.email,
-                  icon: Icons.email_outlined,
+                  icon: Icons.alternate_email_rounded,
                   keyboardType: TextInputType.emailAddress,
                   focusNode: _emailFocusNode,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 14),
 
-                // Password with toggle
-                _buildTextField(
+                // Password Input with Visibility Toggle
+                _buildModernTextField(
                   controller: _passwordController,
                   hintText: l10n.password,
-                  icon: Icons.lock_outline,
+                  icon: Icons.lock_outline_rounded,
                   obscureText: _obscurePassword,
                   focusNode: _passwordFocusNode,
-                  onPasswordToggle: () =>
-                      setState(() => _obscurePassword = !_obscurePassword),
+                  onPasswordToggle: () => setState(() => _obscurePassword = !_obscurePassword),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
 
-                // Forgot Password
+                // Forgot Password Link
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: _forgotPassword,
                     child: Text(
                       l10n.forgotPassword,
-                      style: const TextStyle(color: kBrownAccent),
+                      style: const TextStyle(
+                        color: AppColors.primary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 14),
 
-                // Error Message
+                // Error Message Box
                 if (_errorMessage.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16.0),
-                    child: Column(
-                      children: [
-                        Text(
-                          _errorMessage,
-                          style: const TextStyle(color: Color(0xFFD32F2F)),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 8),
-                        // Offer a Troubleshoot button for auth-specific errors
-                        if (_errorMessage.toLowerCase().contains('recaptcha') ||
-                            _errorMessage.toLowerCase().contains('sha') ||
-                            _errorMessage.toLowerCase().contains(
-                              'developer_error',
-                            ))
-                          TextButton(
-                            onPressed: () => _showAuthTroubleshootDialog(),
-                            child: const Text(
-                              'Troubleshoot Sign-in',
-                              style: TextStyle(color: kBrownAccent),
-                            ),
-                          ),
-                      ],
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 16.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.danger.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.danger.withValues(alpha: 0.3)),
+                    ),
+                    child: Text(
+                      _errorMessage,
+                      style: const TextStyle(color: Color(0xFFF87171), fontSize: 13, fontWeight: FontWeight.w500),
+                      textAlign: TextAlign.center,
                     ),
                   ),
 
-                // Sign In Button
+                // Primary Sign In Button
                 SizedBox(
-                  height: 55,
+                  height: 52,
                   child: _isLoading
                       ? const Center(
-                          child: CircularProgressIndicator(color: kBrownAccent),
+                          child: CircularProgressIndicator(color: AppColors.primary),
                         )
                       : ElevatedButton(
                           onPressed: _login,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: kBrownAccent,
+                            backgroundColor: AppColors.primary,
                             foregroundColor: Colors.black,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                           child: Text(
                             l10n.login,
                             style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.5,
                             ),
                           ),
                         ),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
 
                 // Separator
                 Row(
                   children: [
-                    Expanded(child: Divider(color: Colors.grey.shade800)),
+                    const Expanded(child: Divider(color: AppColors.border, thickness: 1)),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 14.0),
                       child: Text(
-                        l10n.orSplit,
-                        style: const TextStyle(color: Colors.white70),
+                        'atau lanjutkan dengan',
+                        style: TextStyle(color: AppColors.textMuted, fontSize: 12),
                       ),
                     ),
-                    Expanded(child: Divider(color: Colors.grey.shade800)),
+                    const Expanded(child: Divider(color: AppColors.border, thickness: 1)),
                   ],
+                ),
+                const SizedBox(height: 20),
+
+                // Google Sign In Button (Modern Outlined)
+                SizedBox(
+                  height: 50,
+                  child: OutlinedButton(
+                    onPressed: _isLoading ? null : _signInWithGoogle,
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor: AppColors.surface,
+                      side: const BorderSide(color: AppColors.border),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Image.asset(
+                          'assets/images/google.png',
+                          height: 20,
+                          width: 20,
+                          errorBuilder: (_, __, ___) => const Icon(Icons.g_mobiledata, color: Colors.white, size: 24),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text(
+                          'Google Account',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 32),
 
-                // Google Sign-In
-                SizedBox(
-                  height: 55,
-                  child: _isLoading
-                      ? const Center(
-                          child: CircularProgressIndicator(color: kBrownAccent),
-                        )
-                      : ElevatedButton.icon(
-                          onPressed: _signInWithGoogle,
-                          icon: Image.asset(
-                            'assets/images/google.png',
-                            height: 24,
-                            errorBuilder: (context, error, stackTrace) =>
-                                const Icon(
-                                  Icons.android,
-                                  color: Colors.white,
-                                  size: 24,
-                                ),
-                          ),
-                          label: Text(
-                            l10n.continueWithGoogle,
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: kDarkGrey,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(color: Colors.grey.shade800),
-                            ),
-                          ),
-                        ),
-                ),
-                const SizedBox(height: 40),
-
-                // Footer
-                RichText(
-                  textAlign: TextAlign.center,
-                  text: TextSpan(
-                    style: const TextStyle(color: Colors.white54, fontSize: 12),
-                    children: [
-                      TextSpan(text: l10n.termFooterPre),
-                      TextSpan(
-                        text: l10n.termFooterService,
-                        style: const TextStyle(
-                          color: kBrownAccent,
-                          decoration: TextDecoration.underline,
-                        ),
-                        recognizer: TapGestureRecognizer()
-                          ..onTap = () {
-                            // Open internal Terms of Service page
-                            Navigator.of(context).pushNamed('/legal/terms');
-                          },
+                // Multi-Role Hint Badge (Professional Footer)
+                Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: AppColors.border.withValues(alpha: 0.6)),
+                    ),
+                    child: Text(
+                      'Portal: Pelanggan • Kapster • Kasir • Admin',
+                      style: TextStyle(
+                        color: AppColors.textMuted,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.3,
                       ),
-                      TextSpan(text: l10n.termFooterAnd),
-                      TextSpan(
-                        text: l10n.termFooterPrivacy,
-                        style: const TextStyle(
-                          color: kBrownAccent,
-                          decoration: TextDecoration.underline,
-                        ),
-                        recognizer: TapGestureRecognizer()
-                          ..onTap = () {
-                            Navigator.of(context).pushNamed('/legal/privacy');
-                          },
-                      ),
-                    ],
+                    ),
                   ),
                 ),
+                const SizedBox(height: 16),
               ],
             ),
           ),
@@ -649,70 +474,56 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // ========================================
-  // custom widget: tab untuk login/signup
-  // ========================================
-  Widget _buildAuthTabs({
+  Widget _buildAuthPillTabs({
     required bool isLogin,
     required VoidCallback onSignUpTap,
     required String loginLabel,
     required String signUpLabel,
   }) {
-    // penjelasan:
-    // - widget ini menampilkan 2 tab: "log in" dan "sign up"
-    // - tab yang aktif memiliki background coklat
-    // - tab yang tidak aktif transparan
-    // - ontap callback dipanggil saat user tekan tab
-
     return Container(
+      padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: kDarkGrey,
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
       ),
       child: Row(
         children: [
-          // penjelasan tab login:
-          // - expanded membuat tab mengambil ruang sama rata
-          // - container dengan background coklat untuk tab aktif
-          // - text "log in" dengan alignment center
           Expanded(
             child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 14),
+              padding: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
-                color: kBrownAccent,
-                borderRadius: BorderRadius.circular(12),
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
                 loginLabel,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: Colors.black,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14,
                 ),
               ),
             ),
           ),
-          // penjelasan tab signup:
-          // - gesturedetector untuk mendeteksi tap
-          // - onTap callback untuk navigasi ke register screen
-          // - container dengan background transparan
           Expanded(
-            child: GestureDetector(
-              onTap: onSignUpTap,
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                decoration: BoxDecoration(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  signUpLabel,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+            child: Semantics(
+              button: true,
+              label: signUpLabel,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(10),
+                onTap: onSignUpTap,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Text(
+                    signUpLabel,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.textMuted,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                    ),
                   ),
                 ),
               ),
@@ -723,10 +534,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // ========================================
-  // custom widget: text input field
-  // ========================================
-  Widget _buildTextField({
+  Widget _buildModernTextField({
     required TextEditingController controller,
     required String hintText,
     required IconData icon,
@@ -735,56 +543,41 @@ class _LoginScreenState extends State<LoginScreen> {
     bool obscureText = false,
     VoidCallback? onPasswordToggle,
   }) {
-    // penjelasan:
-    // - reusable widget untuk membuat input field dengan style yang konsisten
-    // - controller: menangkap text yang user ketik
-    // - hinttext: placeholder text saat field kosong
-    // - icon: icon di sebelah kiri input
-    // - keyboardtype: tipe keyboard yang muncul (email, number, text, dll)
-
     final node = focusNode;
+    final hasFocus = node?.hasFocus ?? false;
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 150),
+    return Container(
       decoration: BoxDecoration(
-        color: kDarkGrey,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: (node != null && node.hasFocus)
-            ? [
-                BoxShadow(
-                  color: kBrownAccent.withValues(alpha: 0.12),
-                  blurRadius: 8,
-                  spreadRadius: 1,
-                ),
-              ]
-            : null,
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: hasFocus ? AppColors.primary : AppColors.border,
+          width: hasFocus ? 1.5 : 1.0,
+        ),
       ),
       child: TextField(
         controller: controller,
         focusNode: node,
         keyboardType: keyboardType,
         obscureText: obscureText,
-        style: const TextStyle(color: Colors.white),
+        style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
         decoration: InputDecoration(
           hintText: hintText,
-          hintStyle: const TextStyle(color: kHintText),
-          filled: true,
-          fillColor: Colors.transparent,
-          prefixIcon: Icon(icon, color: kHintText, size: 22),
+          hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 14),
+          prefixIcon: Icon(icon, color: hasFocus ? AppColors.primary : AppColors.textMuted, size: 20),
           suffixIcon: onPasswordToggle != null
               ? IconButton(
+                  tooltip: obscureText ? 'Tampilkan kata sandi' : 'Sembunyikan kata sandi',
                   icon: Icon(
-                    obscureText ? Icons.visibility : Icons.visibility_off,
-                    color: kHintText,
+                    obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                    color: AppColors.textMuted,
+                    size: 20,
                   ),
                   onPressed: onPasswordToggle,
                 )
               : null,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           border: InputBorder.none,
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20),
-            borderSide: const BorderSide(color: kBrownAccent, width: 1.5),
-          ),
         ),
       ),
     );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:geges_smartbarber/config/app_colors.dart';
 import 'package:geges_smartbarber/screens/auth/auth_gate.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -55,7 +56,7 @@ class _SplashScreenState extends State<SplashScreen>
     _mainController.forward();
 
     // 3. Navigation Timer
-    Timer(const Duration(milliseconds: 3500), () {
+    Timer(const Duration(milliseconds: 2000), () {
       if (mounted) {
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
@@ -82,7 +83,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    const Color kBrownAccent = Color(0xFFC3A47B);
+    const Color kBrownAccent = AppColors.primary;
 
     return Scaffold(
       backgroundColor: Colors.black, // Pure black for enterprise feel
@@ -148,22 +149,22 @@ class _SplashScreenState extends State<SplashScreen>
                   child: Column(
                     children: [
                       Text(
-                        "GEGES".toUpperCase(),
+                        "SMARTBARBER",
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 22,
                           fontWeight: FontWeight.w900,
-                          letterSpacing: 8,
+                          letterSpacing: 6,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
                       Text(
-                        "Premium Grooming Experience",
+                        "Ekosistem Antrean & Kasir Multi-Tenant",
                         style: TextStyle(
-                          color: kBrownAccent.withValues(alpha: 0.7),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          letterSpacing: 2,
+                          color: AppColors.primaryLight,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 1.2,
                         ),
                       ),
                     ],
@@ -180,13 +181,13 @@ class _SplashScreenState extends State<SplashScreen>
             right: 0,
             child: FadeTransition(
               opacity: _taglineAnimation,
-              child: const Center(
+              child: Center(
                 child: SizedBox(
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 1.5,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white24),
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary.withValues(alpha: 0.6)),
                   ),
                 ),
               ),
