@@ -56,7 +56,7 @@ jobs:
         run: flutter pub get
 
       - name: Run Flutter Analyze
-        run: flutter analyze --no-fatal-warnings
+        run: flutter analyze
 
       - name: Run Fast Unit & Widget Tests
         env:

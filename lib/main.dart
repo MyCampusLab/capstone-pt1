@@ -53,6 +53,7 @@ void bootstrapApp({
     (options) {
       options.dsn = sentryDsn;
       options.tracesSampleRate = 1.0; 
+      // ignore: experimental_member_use
       options.profilesSampleRate = 1.0;
       options.attachScreenshot = true;
       options.environment = AppConfig.environment == Environment.prod ? 'production' : 'development';
