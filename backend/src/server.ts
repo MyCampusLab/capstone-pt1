@@ -1,6 +1,4 @@
 import http from 'http';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import express, { type Request, type Response, type NextFunction } from 'express';
 import cors from 'cors';
 import { Server as SocketIOServer } from 'socket.io';
@@ -15,8 +13,6 @@ import { reportRouter } from './routes/report.routes.js';
 const logger = pino({
   level: env.LOG_LEVEL,
 });
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 export const app = express();
 export const server = http.createServer(app);
@@ -54,10 +50,6 @@ app.get('/health', (_req: Request, res: Response) => {
     uptimeSeconds: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
   });
-});
-// Mobile Testbed UI (USB Debugging / Phone Browser)
-app.get('/test-mobile', (_req: Request, res: Response) => {
-  res.sendFile(path.join(__dirname, 'routes', 'mobile-test.html'));
 });
 
 // Domain Routes
