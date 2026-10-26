@@ -59,7 +59,4 @@ jobs:
         run: flutter analyze
 
       - name: Run Stable Widget Tests
-        env:
-          CI: true
-        run: |
-          flutter test test/widget/auth/login_register_ui_test.dart
+        run: flutter test test/widget/auth/login_register_ui_test.dart
