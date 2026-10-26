@@ -33,7 +33,12 @@ const String sentryDsn = String.fromEnvironment(
   defaultValue: 'https://6ae0b86bbd9b4371c7f7dbc599e5b419@o4510682370015232.ingest.us.sentry.io/4510682373554176',
 );
 
-void main() async {
+void main() => bootstrapApp();
+
+void bootstrapApp({
+  String appTitle = 'GEGES SmartBarber',
+  Widget? home,
+}) async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
@@ -89,7 +94,7 @@ void main() async {
         runApp(
           ChangeNotifierProvider(
             create: (context) => LocaleProvider(),
-            child: const MyApp(),
+            child: MyApp(appTitle: appTitle, homeScreen: home),
           ),
         );
       } catch (e, stackTrace) {
@@ -111,7 +116,14 @@ void main() async {
 
 
 class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+  final String appTitle;
+  final Widget? homeScreen;
+
+  const MyApp({
+    super.key,
+    this.appTitle = 'GEGES SmartBarber',
+    this.homeScreen,
+  });
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -186,7 +198,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     return MaterialApp(
       navigatorKey: appNavigatorKey,
       navigatorObservers: [SentryNavigatorObserver()], // Added for screen tracking
-      title: 'GEGES SmartBarber',
+      title: widget.appTitle,
       debugShowCheckedModeBanner: false,
       
       // Localization configuration
@@ -353,7 +365,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       // - OnboardingScreen = layar pengenalan aplikasi untuk user baru
       // - jika user sudah pernah buka, bisa langsung ke LoginScreen
       // - (implementasi bisa menggunakan shared_preferences untuk check)
-      home: const SplashScreen(), // Ganti AuthGate dengan SplashScreen
+      home: widget.homeScreen ?? const SplashScreen(),
     );
   }
 }

@@ -1,4 +1,4 @@
-.PHONY: help dev build test db-up db-down db-migrate db-seed clean status tunnel
+.PHONY: help dev build test db-up db-down db-migrate db-seed clean status tunnel run-customer run-partner build-customer build-partner
 
 help:
 	@echo "================================================================="
@@ -13,6 +13,10 @@ help:
 	@echo "  make db-seed     - Masukkan data awal 3 barbershop mitra (Febrian, RR, Stupid Culture)"
 	@echo "  make status      - Periksa status kontainer & proses backend"
 	@echo "  make tunnel      - Buka tunnel HTTPS publik gratis ke port 4000 via Cloudflare"
+	@echo "  make run-customer   - Jalankan APK Pelanggan (SmartBarber B2C)"
+	@echo "  make run-partner    - Jalankan APK Mitra Kasir & Barber (SmartBarber B2B)"
+	@echo "  make build-customer - Kompilasi APK rilis Pelanggan"
+	@echo "  make build-partner  - Kompilasi APK rilis Mitra Kasir & Barber"
 	@echo "================================================================="
 
 dev:
@@ -44,6 +48,18 @@ status:
 
 tunnel:
 	cloudflared tunnel --url http://localhost:4000
+
+run-customer:
+	flutter run -t lib/main_customer.dart
+
+run-partner:
+	flutter run -t lib/main_partner.dart
+
+build-customer:
+	flutter build apk --release -t lib/main_customer.dart
+
+build-partner:
+	flutter build apk --release -t lib/main_partner.dart
 
 clean:
 	rm -rf backend/dist backend/node_modules/.cache

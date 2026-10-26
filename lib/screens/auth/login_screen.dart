@@ -100,7 +100,7 @@ class _LoginScreenState extends State<LoginScreen> {
     Widget targetScreen;
     if (role == 'customer') {
       targetScreen = widget.homeBuilder?.call(context) ?? const HomeScreen();
-    } else if (role == 'admin_owner' || role == 'owner' || role == 'admin' || role == 'super_admin') {
+    } else if (role == 'admin_owner' || role == 'owner' || role == 'admin' || role == 'super_admin' || role == 'barberman' || role == 'barber' || role == 'cashier') {
       targetScreen = widget.adminBuilder?.call(context) ?? const AdminDashboardScreen();
     } else {
       setState(() => _errorMessage = l10n.errRoleInvalid(role ?? '<null>'));
