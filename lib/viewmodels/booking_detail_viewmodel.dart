@@ -57,8 +57,10 @@ class BookingDetailViewModel extends ChangeNotifier {
   }
 
   Future<void> contactSupport(BuildContext context, String bookingId) async {
-    final String message = "Halo Admin Geges SmartBarber, saya butuh bantuan untuk Booking ID: $bookingId";
-    final Uri whatsappUrl = Uri.parse("https://wa.me/6281234567890?text=${Uri.encodeComponent(message)}");
+    final String rawPhone = barbershop?.whatsappNumber?.replaceAll(RegExp(r'[^0-9]'), '') ?? '6287896903760';
+    final String targetPhone = rawPhone.startsWith('0') ? '62${rawPhone.substring(1)}' : rawPhone;
+    final String message = "Halo Admin ${barbershop?.name ?? 'SmartBarber'}, saya butuh bantuan untuk Booking ID: $bookingId";
+    final Uri whatsappUrl = Uri.parse("https://wa.me/$targetPhone?text=${Uri.encodeComponent(message)}");
     if (!await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication)) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
