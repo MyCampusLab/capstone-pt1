@@ -1,5 +1,6 @@
 // lib/screens/customer/home_screen.dart
 import 'dart:async';
+import 'package:geges_smartbarber/config/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:geges_smartbarber/l10n/generated/app_localizations.dart';
@@ -46,8 +47,8 @@ class _HomeScreenState extends State<HomeScreen> {
   late final QueueService _queueService;
   late final PageController _pageController;
   final TextEditingController _searchController = TextEditingController();
-  static const Color kBrownAccent = Color(0xFFC3A47B);
-  static const Color kDarkGrey = Color(0xFF1E1E1E);
+  static const Color kBrownAccent = AppColors.primary;
+  static const Color kDarkGrey = AppColors.surface;
   int _selectedIndex = 0;
   late Future<List<Barbershop>> _barbershopFuture;
   late Stream<List<Barbershop>> _barbershopStream;

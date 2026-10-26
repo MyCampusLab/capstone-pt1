@@ -1,5 +1,6 @@
 // lib/screens/customer/appointment_screen.dart
 import 'package:flutter/material.dart';
+import 'package:geges_smartbarber/config/app_colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
@@ -33,9 +34,9 @@ class AppointmentScreen extends StatefulWidget {
 class _AppointmentScreenState extends State<AppointmentScreen> {
   late BarbershopService _barbershopService;
   late final QueueService _queueService;
-  static const Color kBrownAccent = Color(0xFFC3A47B);
-  static const Color kSurface = Color(0xFF0F0F0F);
-  static const Color kCardBg = Color(0xFF1A1A1A);
+  static const Color kBrownAccent = AppColors.primary;
+  static const Color kSurface = AppColors.background;
+  static const Color kCardBg = AppColors.surface;
 
   int _currentStep = 0; 
   final List<Service> _selectedServices = [];

@@ -1,5 +1,6 @@
 // lib/screens/customer/booking_detail_screen.dart
 import 'package:flutter/material.dart';
+import 'package:geges_smartbarber/config/app_colors.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart'; // Wajib ada provider
 import 'package:geges_smartbarber/models/queue.dart';
@@ -9,13 +10,13 @@ import 'package:geges_smartbarber/widgets/app_image.dart';
 import 'package:geges_smartbarber/viewmodels/booking_detail_viewmodel.dart';
 import 'payment_screen.dart';
 
-const Color kBrownAccent = Color(0xFFC3A47B);
-const Color kDarkGrey = Color(0xFF1E1E1E);
-const Color kSurface = Colors.black;
-const Color kTextGrey = Colors.white70;
-const Color kSuccess = Color(0xFF4CAF50);
-const Color kError = Color(0xFFD32F2F);
-const Color kWarning = Color(0xFFFFA000);
+const Color kBrownAccent = AppColors.primary;
+const Color kDarkGrey = AppColors.surface;
+const Color kSurface = AppColors.background;
+const Color kTextGrey = AppColors.textSecondary;
+const Color kSuccess = AppColors.success;
+const Color kError = AppColors.danger;
+const Color kWarning = AppColors.warning;
 
 class BookingDetailScreen extends StatelessWidget {
   final String queueId;

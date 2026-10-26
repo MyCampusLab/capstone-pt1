@@ -1,5 +1,6 @@
 // lib/screens/admin/admin_dashboard.dart
 import 'package:flutter/material.dart';
+import 'package:geges_smartbarber/config/app_colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
@@ -21,10 +22,10 @@ import 'package:geges_smartbarber/screens/admin/account_management_screen.dart';
 import 'package:geges_smartbarber/screens/admin/sales_report_screen.dart';
 import 'package:geges_smartbarber/screens/admin/admin_dashboard_skeleton.dart';
 
-const Color kBrownAccent = Color(0xFFC3A47B);
-const Color kDarkSurface = Color(0xFF1E1E1E);
-const Color kBlack = Colors.black;
-const Color kRedNotification = Color(0xFFFF3B30);
+const Color kBrownAccent = AppColors.primary;
+const Color kDarkSurface = AppColors.surface;
+const Color kBlack = AppColors.background;
+const Color kRedNotification = AppColors.danger;
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});

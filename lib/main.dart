@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:geges_smartbarber/config/app_colors.dart';
 import 'package:flutter/cupertino.dart';
 // import 'package:flutter/foundation.dart'; // Removed: Unnecessary
 import 'package:flutter_native_splash/flutter_native_splash.dart';
@@ -166,11 +167,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   // ========================================
   // warna tema aplikasi
   // ========================================
-  static const Color kBrownAccent = Color(0xFFC3A47B); // warna coklat utama
-  static const Color kBlackBackground = Colors.black; // warna latar aplikasi
-  static const Color kDarkGrey = Color(
-    0xFF1E1E1E,
-  ); // warna abu-abu gelap untuk cards
+  static const Color kBrownAccent = AppColors.primary;
+  static const Color kBlackBackground = AppColors.background;
+  static const Color kDarkGrey = AppColors.surface;
 
   @override
   Widget build(BuildContext context) {

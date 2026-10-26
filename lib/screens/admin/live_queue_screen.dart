@@ -1,5 +1,6 @@
 // lib/screens/admin/live_queue_screen.dart
 import 'dart:async';
+import 'package:geges_smartbarber/config/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geges_smartbarber/models/queue.dart';
@@ -8,9 +9,9 @@ import 'package:geges_smartbarber/services/queue_service.dart';
 import 'package:geges_smartbarber/widgets/admin/queue_card.dart';
 import 'package:geges_smartbarber/widgets/utility/loading_widget.dart';
 
-const Color kBrownAccent = Color(0xFFC3A47B);
-const Color kDarkSurface = Color(0xFF1E1E1E);
-const Color kBlack = Colors.black;
+const Color kBrownAccent = AppColors.primary;
+const Color kDarkSurface = AppColors.surface;
+const Color kBlack = AppColors.background;
 
 class LiveQueueScreen extends StatefulWidget {
   final String barbershopId;

@@ -1,5 +1,6 @@
 // lib/screens/customer/tabs/my_bookings_screen.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:geges_smartbarber/config/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -10,10 +11,10 @@ import 'package:geges_smartbarber/screens/customer/special_orders_screen.dart';
 import 'package:geges_smartbarber/l10n/generated/app_localizations.dart';
 import '../booking_detail_screen.dart';
 
-const Color kBrownAccent = Color(0xFFC3A47B);
-const Color kDarkGrey = Color(0xFF1E1E1E);
-const Color kSurface = Colors.black;
-const Color kTextGrey = Colors.white70;
+const Color kBrownAccent = AppColors.primary;
+const Color kDarkGrey = AppColors.surface;
+const Color kSurface = AppColors.background;
+const Color kTextGrey = AppColors.textSecondary;
 
 class MyBookingsScreen extends StatefulWidget {
   final FirebaseFirestore? firestore;
