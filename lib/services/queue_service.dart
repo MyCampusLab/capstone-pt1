@@ -616,6 +616,7 @@ class QueueService implements QueueServiceContract {
   }
 
   // 🧾 CORE BOOKING
+  @override
 
   Future<DocumentReference<Map<String, dynamic>>> createQueue(Map<String, dynamic> queueData) async {
     Timestamp bookingTs;
