@@ -278,21 +278,21 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 20),
 
                 // Title & Subtitle
-                const Text(
-                  'SmartBarber',
+                Text(
+                  l10n.welcome,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 28,
+                    fontSize: 26,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 1.0,
+                    letterSpacing: 0.5,
                   ),
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Platform Antrean & Kasir Multi-Tenant Terpadu',
+                  l10n.welcomeSubtitle,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
@@ -431,9 +431,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           errorBuilder: (_, __, ___) => const Icon(Icons.g_mobiledata, color: Colors.white, size: 24),
                         ),
                         const SizedBox(width: 12),
-                        const Text(
-                          'Google Account',
-                          style: TextStyle(
+                        Text(
+                          l10n.continueWithGoogle,
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -569,7 +569,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ? IconButton(
                   tooltip: obscureText ? 'Tampilkan kata sandi' : 'Sembunyikan kata sandi',
                   icon: Icon(
-                    obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                    obscureText ? Icons.visibility : Icons.visibility_off,
                     color: AppColors.textMuted,
                     size: 20,
                   ),

@@ -275,78 +275,190 @@ class _HomeScreenState extends State<HomeScreen> {
     final distance = _shopDistances[shop.id];
     final l10n = AppLocalizations.of(context)!;
 
-    return GestureDetector(onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => BarbershopDetailScreen(barbershop: shop))), child: Container(margin: const EdgeInsets.only(bottom: 20.0), decoration: BoxDecoration(color: kDarkGrey, borderRadius: BorderRadius.circular(20)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Hero(
-        tag: 'shop_image_${shop.id}',
-        child: ClipRRect(borderRadius: const BorderRadius.vertical(top: Radius.circular(20)), child: SizedBox(height: 180, width: double.infinity, child: _buildImage(shop.imageUrl))),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20.0),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.border, width: 1.0),
       ),
-      Padding(padding: const EdgeInsets.all(20.0), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                  child: Text(shop.name,
-                                      style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis)),
-                              if (distance != null)
-                                _DistanceBadge(distance: distance),
-                            ]),
-                        const SizedBox(height: 8),
-                        Text(shop.addres,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => BarbershopDetailScreen(barbershop: shop),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Stack(
+                children: [
+                  Hero(
+                    tag: 'shop_image_${shop.id}',
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                      child: SizedBox(
+                        height: 180,
+                        width: double.infinity,
+                        child: _buildImage(shop.imageUrl),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 14,
+                    right: 14,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: shop.isOpen
+                            ? AppColors.success.withValues(alpha: 0.9)
+                            : AppColors.danger.withValues(alpha: 0.9),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.3),
+                            blurRadius: 6,
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            shop.isOpen ? 'Buka' : 'Tutup',
                             style: const TextStyle(
-                                color: Colors.white70, fontSize: 14),
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.all(18.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            shop.name,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 19,
+                              fontWeight: FontWeight.w800,
+                            ),
                             maxLines: 1,
-                            overflow: TextOverflow.ellipsis),
-                        const SizedBox(height: 16),
-                        // RENDER TAGS
-                        Wrap(
-                          spacing: 8.0,
-                          runSpacing: 8.0,
-                          children: validServices
-                              .map((id) => _buildTagChip(id))
-                              .toList(),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                        const SizedBox(height: 20),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 55,
-                          child: shop.isOpen
-                              ? ElevatedButton(
-                                  onPressed: () => Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              BarbershopDetailScreen(
-                                                  barbershop: shop))),
-                                  style: ElevatedButton.styleFrom(
-                                      backgroundColor: kBrownAccent,
-                                      foregroundColor: Colors.black,
-                                      shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(12))),
-                                  child: Text(l10n.bookNow,
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16)))
-                              : ElevatedButton(
-                                  onPressed: null,
-                                  style: ElevatedButton.styleFrom(
-                                      backgroundColor: kRedDanger,
-                                      disabledBackgroundColor: kRedDanger,
-                                      shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(12))),
-                                  child: Text(l10n.shopClosed, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)))
-                        )
-                      ]))
-            ])));
+                        if (distance != null) _DistanceBadge(distance: distance),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on_outlined, color: AppColors.primary, size: 14),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            shop.addres,
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    // RENDER TAGS
+                    Wrap(
+                      spacing: 8.0,
+                      runSpacing: 8.0,
+                      children: validServices
+                          .map((id) => _buildTagChip(id))
+                          .toList(),
+                    ),
+                    const SizedBox(height: 18),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: shop.isOpen
+                          ? ElevatedButton(
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      BarbershopDetailScreen(barbershop: shop),
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: Colors.black,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: Text(
+                                l10n.bookNow,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            )
+                          : ElevatedButton(
+                              onPressed: null,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.surfaceElevated,
+                                disabledBackgroundColor: AppColors.surfaceElevated,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: Text(
+                                l10n.shopClosed,
+                                style: TextStyle(
+                                  color: AppColors.textMuted,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
-
-  // Define kRedDanger if not present or use standard Colors.red
-  static const Color kRedDanger = Color(0xFFDC3545);
 
   Widget _buildImage(String path) {
     return AppImage(
@@ -360,15 +472,23 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildTagChip(String id) {
-    // Karena kita sudah filter di atas, id pasti ada di map.
     final String label = _serviceNames[id] ?? id;
     return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
-        decoration: BoxDecoration(
-            color: Colors.grey.shade800,
-            borderRadius: BorderRadius.circular(30.0)),
-        child: Text(label,
-            style: const TextStyle(color: Colors.white, fontSize: 12)));
+      padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceElevated,
+        borderRadius: BorderRadius.circular(8.0),
+        border: Border.all(color: AppColors.border, width: 0.8),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
   }
 
   Future<void> _handleRefresh() async {

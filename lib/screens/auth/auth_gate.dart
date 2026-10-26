@@ -1,5 +1,6 @@
 // lib/screens/auth/auth_gate.dart
 import 'package:flutter/material.dart';
+import 'package:geges_smartbarber/config/app_colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:geges_smartbarber/services/auth_service.dart';
@@ -64,12 +65,10 @@ class _AuthGateState extends State<AuthGate> {
         await FirebaseAuth.instance.signOut();
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const ScaffoldMessenger(
-            child: SnackBar(
-              content: Text('Akun ditangguhkan. Hubungi admin.'),
-              backgroundColor: Colors.red,
-            ),
-          ) as SnackBar,
+          const SnackBar(
+            content: Text('Akun ditangguhkan. Hubungi pengelola.'),
+            backgroundColor: AppColors.danger,
+          ),
         );
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -97,6 +96,9 @@ class _AuthGateState extends State<AuthGate> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    return const Scaffold(
+      backgroundColor: AppColors.background,
+      body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+    );
   }
 }
