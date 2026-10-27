@@ -733,8 +733,6 @@ export function createPaymentRouter(io: SocketIOServer): Router {
       tenantName: tenant.name,
       qrisRawPayload: tenant.qris_raw_payload,
       webhookUrl,
-      webhookSecret: tenant.webhook_secret,
-      smartPasteUrl: `${webhookUrl}?secret=${encodeURIComponent(tenant.webhook_secret)}`,
     });
   });
 
