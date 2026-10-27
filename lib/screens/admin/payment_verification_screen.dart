@@ -36,19 +36,35 @@ class _PaymentVerificationScreenState extends State<PaymentVerificationScreen> {
     _loadUnmatchedFromBackend();
   }
 
-  Future<void> _loadUnmatchedFromBackend() async {
+  Future<void> _loadUnmatchedFromBackend([Iterable<String>? extraSlugs]) async {
+    final slugs = <String>{
+      'febrian-barbershop',
+      'rr-barber-studio',
+      'stupid-culture',
+      if (extraSlugs != null) ...extraSlugs.where((s) => s.isNotEmpty),
+    };
+    final collected = <Map<String, dynamic>>[];
+    final api = HttpApiClient();
     try {
-      final api = HttpApiClient();
-      final res = await api.get('/api/payments/febrian-barbershop/unmatched');
+      for (final slug in slugs) {
+        try {
+          final res = await api.get('/api/payments/$slug/unmatched');
+          if (res is List) {
+            for (final item in res.whereType<Map>()) {
+              final map = Map<String, dynamic>.from(item);
+              map['tenant_slug'] ??= slug;
+              collected.add(map);
+            }
+          }
+        } catch (_) {}
+      }
+    } finally {
       api.close();
-      if (!mounted || res is! List) return;
-      setState(() {
-        _unmatchedNotifications = res
-            .whereType<Map>()
-            .map((e) => Map<String, dynamic>.from(e))
-            .toList();
-      });
-    } catch (_) {}
+    }
+    if (!mounted) return;
+    setState(() {
+      _unmatchedNotifications = collected;
+    });
   }
 
   Future<void> _fetchBulkDetails(List<Queue> queues) async {
@@ -160,7 +176,7 @@ class _PaymentVerificationScreenState extends State<PaymentVerificationScreen> {
           }
 
           final requests = snapshot.data ?? [];
-          if (requests.isEmpty) {
+          if (requests.isEmpty && _unmatchedNotifications.isEmpty) {
             return const Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -191,10 +207,56 @@ class _PaymentVerificationScreenState extends State<PaymentVerificationScreen> {
             return a.paymentDeadline!.compareTo(b.paymentDeadline!);
           });
 
-          return ListView.builder(
+          return ListView(
             padding: const EdgeInsets.all(16),
-            itemCount: requests.length,
-            itemBuilder: (context, i) => _buildCard(context, requests[i]),
+            children: [
+              if (_unmatchedNotifications.isNotEmpty) ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: kDarkGrey,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.amberAccent.withValues(alpha: 0.6)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.notifications_active_rounded, color: Colors.amberAccent, size: 16),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Mutasi DompetKu Belum Tercocokkan (${_unmatchedNotifications.length})',
+                            style: const TextStyle(
+                              color: Colors.amberAccent,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      ..._unmatchedNotifications.take(5).map((u) {
+                        final amt = NumberFormat.currency(
+                          locale: 'id_ID',
+                          symbol: 'Rp ',
+                          decimalDigits: 0,
+                        ).format(num.tryParse('${u['amount']}') ?? 0);
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: Text(
+                            '• $amt via ${u['app_source'] ?? 'QRIS'} (${u['payer_name'] ?? 'Pelanggan'}) — [${u['tenant_slug']}]',
+                            style: const TextStyle(color: Colors.white70, fontSize: 11),
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+              ],
+              ...requests.map((q) => _buildCard(context, q)),
+            ],
           );
         },
       ),
@@ -390,6 +452,21 @@ class _PaymentVerificationScreenState extends State<PaymentVerificationScreen> {
     final noteCtrl = TextEditingController();
     final hasProof =
         q.paymentProofBase64 != null && q.paymentProofBase64!.isNotEmpty;
+    final shopSlug = q.barbershopId.isNotEmpty
+        ? q.barbershopId
+        : 'febrian-barbershop';
+    final tenantUnmatched = _unmatchedNotifications
+        .where((u) => u['tenant_slug'] == shopSlug && u['dompetku_tx_id'] is String)
+        .toList();
+    final matchedCandidate = tenantUnmatched.cast<Map<String, dynamic>?>().firstWhere(
+          (u) {
+            final amt = (num.tryParse('${u?['amount']}') ?? -1).round();
+            return (q.expectedAmount != null && amt == q.expectedAmount) ||
+                (q.totalPrice != null && amt == q.totalPrice);
+          },
+          orElse: () => null,
+        );
+    String? selectedUnmatchedTxId = matchedCandidate?['dompetku_tx_id'] as String?;
 
     showModalBottomSheet(
       context: context,
@@ -398,7 +475,8 @@ class _PaymentVerificationScreenState extends State<PaymentVerificationScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (c) => Container(
+      builder: (c) => StatefulBuilder(
+        builder: (c, setModalState) => Container(
         padding: EdgeInsets.only(
           left: 20,
           right: 20,
@@ -538,6 +616,47 @@ class _PaymentVerificationScreenState extends State<PaymentVerificationScreen> {
                   ),
                 ),
               ],
+              if (tenantUnmatched.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                const Text(
+                  'Tautkan Mutasi DompetKu (Opsional)',
+                  style: TextStyle(color: Colors.amberAccent, fontSize: 11, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 6),
+                DropdownButtonFormField<String?>(
+                  initialValue: selectedUnmatchedTxId,
+                  dropdownColor: kDarkGrey,
+                  style: const TextStyle(color: Colors.white, fontSize: 11),
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: Colors.black26,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                  items: [
+                    const DropdownMenuItem<String?>(
+                      value: null,
+                      child: Text('Tanpa Tautan Mutasi DompetKu', style: TextStyle(color: Colors.white70)),
+                    ),
+                    ...tenantUnmatched.map((u) {
+                      final txId = u['dompetku_tx_id'] as String;
+                      final amt = NumberFormat.currency(
+                        locale: 'id_ID',
+                        symbol: 'Rp ',
+                        decimalDigits: 0,
+                      ).format(num.tryParse('${u['amount']}') ?? 0);
+                      return DropdownMenuItem<String?>(
+                        value: txId,
+                        child: Text('$amt • ${u['app_source']} (${u['payer_name'] ?? txId})'),
+                      );
+                    }),
+                  ],
+                  onChanged: (val) => setModalState(() => selectedUnmatchedTxId = val),
+                ),
+              ],
               const SizedBox(height: 12),
               const Text(
                 'Catatan (opsional)',
@@ -577,18 +696,14 @@ class _PaymentVerificationScreenState extends State<PaymentVerificationScreen> {
                           );
                           try {
                             final api = HttpApiClient();
-                            final shopSlug = q.barbershopId.isNotEmpty
-                                ? q.barbershopId
-                                : 'febrian-barbershop';
                             await api.post('/api/payments/$shopSlug/verify-manual', {
                               'ticketNumber': q.orderId ?? q.id,
                               'actor': 'kasir_admin_app',
-                              if (_unmatchedNotifications.isNotEmpty)
-                                'unmatchedTxId':
-                                    _unmatchedNotifications.first['dompetku_tx_id'],
+                              if (selectedUnmatchedTxId != null)
+                                'unmatchedTxId': selectedUnmatchedTxId,
                             });
                             api.close();
-                            await _loadUnmatchedFromBackend();
+                            await _loadUnmatchedFromBackend([shopSlug]);
                           } catch (_) {}
                           if (c.mounted) {
                             Navigator.pop(c);
@@ -661,6 +776,7 @@ class _PaymentVerificationScreenState extends State<PaymentVerificationScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

@@ -18,6 +18,7 @@ import 'package:intl/intl.dart';
 import 'package:geges_smartbarber/l10n/generated/app_localizations.dart';
 import 'package:geges_smartbarber/utils/emvco_qris_helper.dart';
 import 'package:geges_smartbarber/services/http_api_client.dart';
+import 'package:qr/qr.dart';
 
 // --- No-Op Service for Tenant Mode ---
 class _NoOpQueueService implements QueueServiceContract {
@@ -621,7 +622,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         CustomPaint(
-                          size: const Size(148, 148),
+                          size: const Size(180, 180),
                           painter: _QrisMatrixPreviewPainter(_dynamicQrisPayload),
                         ),
                         const SizedBox(height: 6),
@@ -894,44 +895,26 @@ class _QrisMatrixPreviewPainter extends CustomPainter {
   final String payload;
   const _QrisMatrixPreviewPainter(this.payload);
 
-  bool _isFinder(int r, int c, int n) {
-    final topLeft = r < 7 && c < 7;
-    final topRight = r < 7 && c >= n - 7;
-    final bottomLeft = r >= n - 7 && c < 7;
-    return topLeft || topRight || bottomLeft;
-  }
-
-  bool _finderModule(int r, int c) {
-    if (r == 0 || r == 6 || c == 0 || c == 6) return true;
-    if (r >= 2 && r <= 4 && c >= 2 && c <= 4) return true;
-    return false;
-  }
-
   @override
   void paint(Canvas canvas, Size size) {
-    const int grid = 25;
-    final double cell = size.width / grid;
-    final Paint dark = Paint()..color = Colors.black;
+    final qrCode = QrCode(
+      payload: QrPayload.fromString(payload),
+      errorCorrectLevel: QrErrorCorrectLevel.medium,
+    );
+    final qrImage = QrImage(qrCode);
+    final int moduleCount = qrImage.moduleCount;
+    if (moduleCount <= 0) return;
 
-    for (int r = 0; r < grid; r++) {
-      for (int c = 0; c < grid; c++) {
-        bool fill = false;
-        if (r < 7 && c < 7) {
-          fill = _finderModule(r, c);
-        } else if (r < 7 && c >= grid - 7) {
-          fill = _finderModule(r, c - (grid - 7));
-        } else if (r >= grid - 7 && c < 7) {
-          fill = _finderModule(r - (grid - 7), c);
-        } else if (r == 6 || c == 6) {
-          fill = (r + c).isEven;
-        } else if (!_isFinder(r, c, grid)) {
-          final int idx = (r * grid + c) % payload.length;
-          final int code = payload.codeUnitAt(idx);
-          fill = ((code + r * 7 + c * 13) & 1) == 1;
-        }
-        if (fill) {
+    final double cell = size.width / moduleCount;
+    final Paint dark = Paint()
+      ..color = Colors.black
+      ..style = PaintingStyle.fill;
+
+    for (int r = 0; r < moduleCount; r++) {
+      for (int c = 0; c < moduleCount; c++) {
+        if (qrImage.isDark(r, c)) {
           canvas.drawRect(
-            Rect.fromLTWH(c * cell, r * cell, cell * 0.92, cell * 0.92),
+            Rect.fromLTWH(c * cell, r * cell, cell + 0.25, cell + 0.25),
             dark,
           );
         }
