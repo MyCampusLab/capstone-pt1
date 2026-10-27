@@ -16,6 +16,7 @@ const envSchema = z.object({
   S3_SECRET_KEY: z.string().default('minioadmin'),
   // Security
   JWT_SECRET: z.string().default('smartbarber-dev-jwt-secret-do-not-use-in-prod'),
+  ADMIN_API_KEY: z.string().default('smartbarber-admin-secret-key'),
 });
 
 const parsed = envSchema.safeParse(process.env);

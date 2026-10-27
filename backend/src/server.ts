@@ -9,6 +9,7 @@ import { createQueueRouter } from './routes/queue.routes.js';
 import { mediaRouter } from './routes/media.routes.js';
 import { createCashierRouter } from './routes/cashier.routes.js';
 import { reportRouter } from './routes/report.routes.js';
+import { createPaymentRouter } from './routes/payment.routes.js';
 
 const logger = pino({
   level: env.LOG_LEVEL,
@@ -26,7 +27,13 @@ export const io = new SocketIOServer(server, {
 });
 
 app.use(cors({ origin: env.CORS_ORIGIN }));
-app.use(express.json());
+app.use(
+  express.json({
+    verify: (req: http.IncomingMessage & { rawBody?: string }, _res, buf) => {
+      req.rawBody = buf.toString('utf8');
+    },
+  })
+);
 
 // Factor XI: Logs as event streams
 app.use((req: Request, res: Response, next: NextFunction) => {
@@ -59,6 +66,7 @@ app.use('/api/fuzzy', createQueueRouter(io));
 app.use('/api/media', mediaRouter);
 app.use('/api/cashier', createCashierRouter(io));
 app.use('/api/reports', reportRouter);
+app.use('/api/payments', createPaymentRouter(io));
 
 // Start server listening
 if (process.env.NODE_ENV !== 'test') {

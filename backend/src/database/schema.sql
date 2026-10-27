@@ -5,7 +5,7 @@
 
 -- Clean migration drops
 DROP VIEW IF EXISTS v_skripsi_mae_mape, v_active_queue_board CASCADE;
-DROP TABLE IF EXISTS queue_logs, payments, queue_reservations, services, barbers, users, tenants CASCADE;
+DROP TABLE IF EXISTS unmatched_payment_notifications, queue_logs, payments, queue_reservations, services, barbers, users, tenants CASCADE;
 
 -- 1. TABEL TENANTS (Mitra Barbershop Terverifikasi)
 CREATE TABLE IF NOT EXISTS tenants (
@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS tenants (
     address TEXT NOT NULL,
     phone VARCHAR(30) NOT NULL,
     chairs_count INT DEFAULT 3,
+    qris_raw_payload TEXT,
+    webhook_secret VARCHAR(100) NOT NULL DEFAULT 'dompetku-secret-key',
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -95,12 +97,38 @@ CREATE INDEX IF NOT EXISTS idx_tenant_daily_queues ON queue_reservations (tenant
 -- 6. TABEL PAYMENTS (Pencatatan Keuangan & Verifikasi Kasir)
 CREATE TABLE IF NOT EXISTS payments (
     id SERIAL PRIMARY KEY,
+    tenant_id INT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     reservation_id INT NOT NULL REFERENCES queue_reservations(id) ON DELETE CASCADE,
+    base_amount NUMERIC(12, 2) NOT NULL,
+    unique_code INT NOT NULL DEFAULT 0,
     amount NUMERIC(12, 2) NOT NULL,
-    payment_method VARCHAR(30) DEFAULT 'cash' CHECK (payment_method IN ('cash', 'transfer_manual', 'qris')),
+    qris_dynamic_payload TEXT,
+    payment_method VARCHAR(30) DEFAULT 'qris' CHECK (payment_method IN ('cash', 'transfer_manual', 'qris')),
     proof_image_url TEXT,
-    status VARCHAR(20) DEFAULT 'paid' CHECK (status IN ('pending', 'paid', 'verified', 'rejected')),
+    status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'paid', 'verified', 'rejected', 'expired')),
+    dompetku_tx_id VARCHAR(100) UNIQUE,
+    app_source VARCHAR(50),
+    payer_name VARCHAR(100),
     verified_by_user_id INT REFERENCES users(id) ON DELETE SET NULL,
+    expires_at TIMESTAMP WITH TIME ZONE DEFAULT (NOW() + INTERVAL '15 minutes'),
+    verified_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_pending_amount_per_tenant
+ON payments (tenant_id, amount)
+WHERE status = 'pending';
+
+CREATE TABLE IF NOT EXISTS unmatched_payment_notifications (
+    id SERIAL PRIMARY KEY,
+    tenant_id INT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    dompetku_tx_id VARCHAR(100) UNIQUE NOT NULL,
+    amount NUMERIC(12, 2) NOT NULL,
+    app_source VARCHAR(50) NOT NULL,
+    payer_name VARCHAR(100),
+    raw_message TEXT,
+    is_reconciled BOOLEAN DEFAULT FALSE,
+    reconciled_reservation_id INT REFERENCES queue_reservations(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

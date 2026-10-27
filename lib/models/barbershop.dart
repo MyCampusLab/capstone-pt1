@@ -25,7 +25,8 @@ class Barbershop {
   final String? tiktokUrl;
   final String? facebookUrl;
   final String? twitterUrl;
-
+  final String? qrisRawPayload;
+  final String? dompetkuWebhookUrl;
   Barbershop({
     required this.id,
     required this.name,
@@ -49,6 +50,8 @@ class Barbershop {
     this.tiktokUrl,
     this.facebookUrl,
     this.twitterUrl,
+    this.qrisRawPayload,
+    this.dompetkuWebhookUrl,
   });
 
   factory Barbershop.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -87,6 +90,8 @@ class Barbershop {
       tiktokUrl: data['tiktok_url'],
       facebookUrl: data['facebook_url'],
       twitterUrl: data['twitter_url'],
+      qrisRawPayload: data['qris_raw_payload'] ?? data['qrisRawPayload'],
+      dompetkuWebhookUrl: data['dompetku_webhook_url'] ?? data['dompetkuWebhookUrl'],
     );
   }
 
@@ -113,6 +118,8 @@ class Barbershop {
       'tiktok_url': tiktokUrl,
       'facebook_url': facebookUrl,
       'twitter_url': twitterUrl,
+      'qris_raw_payload': qrisRawPayload,
+      'dompetku_webhook_url': dompetkuWebhookUrl,
     };
   }
 }

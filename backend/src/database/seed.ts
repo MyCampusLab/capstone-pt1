@@ -1,4 +1,5 @@
 import { query, pool } from './db.js';
+import { FALLBACK_TENANTS } from '../types/models.js';
 
 export async function seedDatabase(): Promise<void> {
   console.log('🌱 Memulai seeding database relasional multi-tenant (v2.0)...');
@@ -6,19 +7,25 @@ export async function seedDatabase(): Promise<void> {
   // 1. Bersihkan seluruh tabel
   await query(`
     TRUNCATE TABLE 
-      queue_logs, payments, queue_reservations, 
+      unmatched_payment_notifications, queue_logs, payments, queue_reservations, 
       services, barbers, users, tenants 
     RESTART IDENTITY CASCADE;
   `);
 
+  const [t1, t2, t3] = FALLBACK_TENANTS;
+
   // 2. Insert 3 Tenants Barbershop Mitra
   const tenantRows = await query(`
-    INSERT INTO tenants (slug, name, address, phone, chairs_count) VALUES
-    ('febrian-barbershop', 'Febrian BarberShop', 'Jl. Pala Raya No.Desa, Kademangan, Mejasem Barat, Kec. Kramat, Kab. Tegal 52181', '087896903760', 4),
-    ('rr-barber-studio', 'RR Barber Studio', 'Samping Big Laundry, Jl. Projosumarto 1, Kaladawa, Kec. Talang, Kab. Tegal 52193', '088226323086', 3),
-    ('stupid-culture', 'Stupid Culture Barbershop', 'Jl. Kapten Ismail No. 20, Kota Tegal (depan SJT Custom)', '085727566125', 3)
+    INSERT INTO tenants (slug, name, address, phone, chairs_count, qris_raw_payload, webhook_secret) VALUES
+    ($1, $2, $3, $4, $5, $6, $7),
+    ($8, $9, $10, $11, $12, $13, $14),
+    ($15, $16, $17, $18, $19, $20, $21)
     RETURNING id, slug, name;
-  `);
+  `, [
+    t1!.slug, t1!.name, t1!.address, t1!.phone, t1!.chairs_count, t1!.qris_raw_payload, t1!.webhook_secret,
+    t2!.slug, t2!.name, t2!.address, t2!.phone, t2!.chairs_count, t2!.qris_raw_payload, t2!.webhook_secret,
+    t3!.slug, t3!.name, t3!.address, t3!.phone, t3!.chairs_count, t3!.qris_raw_payload, t3!.webhook_secret,
+  ]);
 
   const tenantMap = new Map<string, number>();
   for (const row of tenantRows.rows as Array<{ id: number; slug: string; name: string }>) {

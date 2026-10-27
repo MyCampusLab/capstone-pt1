@@ -6,6 +6,7 @@ import { FuzzySugenoQueueEstimator } from '../algorithms/fuzzySugeno.js';
 import { SmartDispatchEngine, type ActiveBarber, type ActiveQueueItem } from '../algorithms/smartDispatch.js';
 import { FALLBACK_TENANTS, FALLBACK_BARBERS, FALLBACK_SERVICES } from '../types/models.js';
 import { createSlidingWindowLimiter } from '../middleware/rateLimiter.js';
+import { allocateUniquePayment } from '../services/paymentAllocator.js';
 
 const bookingRateLimiter = createSlidingWindowLimiter(60_000, 15);
 
@@ -50,33 +51,39 @@ export function createQueueRouter(io: SocketIOServer): Router {
     const { tenantSlug, customerName, customerPhone, serviceId, barberId, bookingType } = parseResult.data;
 
     let tenantId = 1;
+    let tenantQrisPayload: string | null = null;
+    const fallbackTenant = FALLBACK_TENANTS.find((t) => t.slug === tenantSlug);
+    if (fallbackTenant) {
+      tenantId = fallbackTenant.id;
+      tenantQrisPayload = fallbackTenant.qris_raw_payload;
+    }
+
     try {
-      const tRes = await query('SELECT id, name FROM tenants WHERE slug = $1', [tenantSlug]);
+      const tRes = await query('SELECT id, name, qris_raw_payload FROM tenants WHERE slug = $1', [tenantSlug]);
       if (tRes.rows.length > 0) {
-        const row = tRes.rows[0];
-        if (row && typeof row === 'object' && 'id' in row && typeof row.id === 'number') {
+        const row = tRes.rows[0] as { id?: number; qris_raw_payload?: string | null };
+        if (typeof row.id === 'number') {
           tenantId = row.id;
         }
-      } else {
-        const tFallback = FALLBACK_TENANTS.find((t) => t.slug === tenantSlug);
-        if (tFallback) tenantId = tFallback.id;
+        if (typeof row.qris_raw_payload === 'string' && row.qris_raw_payload.length > 0) {
+          tenantQrisPayload = row.qris_raw_payload;
+        }
       }
-    } catch {
-      const tFallback = FALLBACK_TENANTS.find((t) => t.slug === tenantSlug);
-      if (tFallback) tenantId = tFallback.id;
-    }
+    } catch {}
 
     let serviceComplexity = 3.0;
     let serviceName = 'Layanan Terpilih';
+    let servicePrice = 40000;
     let serviceFound = false;
 
     try {
-      const sRes = await query('SELECT id, name, complexity_score FROM services WHERE id = $1 AND tenant_id = $2', [serviceId, tenantId]);
+      const sRes = await query('SELECT id, name, price, complexity_score FROM services WHERE id = $1 AND tenant_id = $2', [serviceId, tenantId]);
       if (sRes.rows.length > 0) {
-        const row = sRes.rows[0];
-        if (row && typeof row === 'object' && 'name' in row && 'complexity_score' in row) {
+        const row = sRes.rows[0] as { name?: string; price?: string | number; complexity_score?: string | number };
+        if (row && 'name' in row && 'complexity_score' in row) {
           serviceComplexity = Number(row.complexity_score);
           serviceName = String(row.name);
+          if (row.price !== undefined) servicePrice = Number(row.price);
           serviceFound = true;
         }
       }
@@ -87,6 +94,7 @@ export function createQueueRouter(io: SocketIOServer): Router {
       if (sFallback) {
         serviceComplexity = sFallback.complexity_score;
         serviceName = sFallback.name;
+        servicePrice = sFallback.price;
         serviceFound = true;
       }
     }
@@ -227,6 +235,15 @@ export function createQueueRouter(io: SocketIOServer): Router {
       inMemoryQueues.splice(0, inMemoryQueues.length - 50);
     }
 
+    const allocatedPayment = await allocateUniquePayment({
+      tenantId,
+      tenantSlug,
+      qrisRawPayload: tenantQrisPayload,
+      reservationId: dbReservationId,
+      ticketNumber,
+      baseAmount: servicePrice,
+    });
+
     const responsePayload = {
       ticketNumber,
       customerName,
@@ -242,8 +259,16 @@ export function createQueueRouter(io: SocketIOServer): Router {
       estimatedStartTime,
       status: 'waiting',
       bookingType,
+      payment: {
+        paymentId: allocatedPayment.id,
+        baseAmount: allocatedPayment.base_amount,
+        uniqueCode: allocatedPayment.unique_code,
+        expectedAmount: allocatedPayment.amount,
+        qrisDynamicPayload: allocatedPayment.qris_dynamic_payload,
+        status: allocatedPayment.status,
+        expiresAt: allocatedPayment.expires_at,
+      },
     };
-
     io.emit(`queue:${tenantSlug}:updated`, responsePayload);
     res.status(201).json(responsePayload);
   });

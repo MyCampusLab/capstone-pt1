@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter/services.dart';
+import 'package:geges_smartbarber/utils/emvco_qris_helper.dart';
 import 'package:geges_smartbarber/models/barbershop.dart';
 import 'package:geges_smartbarber/services/barbershop_service.dart';
 import 'package:geges_smartbarber/widgets/app_image.dart';
@@ -37,6 +39,7 @@ class _BarbershopSettingsScreenState extends State<BarbershopSettingsScreen> {
   late TextEditingController _tiktokController;
   late TextEditingController _facebookController;
   late TextEditingController _twitterController;
+  late TextEditingController _qrisPayloadController;
 
   late List<String> _facilities;
   final TextEditingController _facilityController = TextEditingController();
@@ -69,6 +72,9 @@ class _BarbershopSettingsScreenState extends State<BarbershopSettingsScreen> {
     _tiktokController = TextEditingController(text: s.tiktokUrl ?? '');
     _facebookController = TextEditingController(text: s.facebookUrl ?? '');
     _twitterController = TextEditingController(text: s.twitterUrl ?? '');
+    _qrisPayloadController = TextEditingController(
+      text: s.qrisRawPayload ?? EmvcoQrisHelper.defaultSampleStaticQris,
+    );
     
     _facilities = List.from(s.facilities);
     _currentImageUrl = s.imageUrl;
@@ -87,6 +93,7 @@ class _BarbershopSettingsScreenState extends State<BarbershopSettingsScreen> {
     _tiktokController.dispose();
     _facebookController.dispose();
     _twitterController.dispose();
+    _qrisPayloadController.dispose();
     _facilityController.dispose();
     super.dispose();
   }
@@ -156,9 +163,9 @@ class _BarbershopSettingsScreenState extends State<BarbershopSettingsScreen> {
         'tiktok_url': _tiktokController.text.trim(),
         'facebook_url': _facebookController.text.trim(),
         'twitter_url': _twitterController.text.trim(),
+        'qris_raw_payload': _qrisPayloadController.text.trim(),
         'facilities': _facilities,
       };
-
       if (base64Image != null) {
         updates['imageUrl'] = base64Image;
       }
@@ -311,6 +318,49 @@ class _BarbershopSettingsScreenState extends State<BarbershopSettingsScreen> {
               const SizedBox(height: 12),
               _buildTextField(_twitterController, 'Twitter/X URL', Icons.close),
 
+
+              const SizedBox(height: 30),
+              _buildSectionTitle('QRIS Dinamis & Jembatan DompetKu (0% Potongan)'),
+              const SizedBox(height: 8),
+              const Text(
+                'Masukkan payload EMVCo QRIS Statis toko Anda (diawali 000201). Sistem otomatis mengubahnya menjadi QRIS Dinamis ber-nominal unik tanpa biaya potongan gateway.',
+                style: TextStyle(color: Colors.white54, fontSize: 12),
+              ),
+              const SizedBox(height: 12),
+              _buildTextField(
+                _qrisPayloadController,
+                'Payload EMVCo QRIS Statis (000201...)',
+                Icons.qr_code_2_rounded,
+                maxLines: 3,
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return null;
+                  return EmvcoQrisHelper.validateStaticQris(v);
+                },
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () {
+                  final webhookUrl =
+                      widget.barbershop.dompetkuWebhookUrl ??
+                      'https://api.gegesbarber.id/api/payments/webhook/${widget.barbershop.id}';
+                  Clipboard.setData(ClipboardData(text: webhookUrl));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('URL Webhook DompetKu disalin: $webhookUrl'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.copy_rounded, color: kBrownAccent, size: 18),
+                label: const Text(
+                  'Salin URL Webhook DompetKu (Smart Paste)',
+                  style: TextStyle(color: kBrownAccent, fontWeight: FontWeight.bold),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: kBrownAccent),
+                  minimumSize: const Size(double.infinity, 46),
+                ),
+              ),
               const SizedBox(height: 40),
               SizedBox(
                 width: double.infinity,

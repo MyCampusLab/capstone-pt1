@@ -16,6 +16,7 @@ import 'package:geges_smartbarber/screens/customer/special_orders_screen.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:geges_smartbarber/l10n/generated/app_localizations.dart';
+import 'package:geges_smartbarber/utils/emvco_qris_helper.dart';
 
 // --- No-Op Service for Tenant Mode ---
 class _NoOpQueueService implements QueueServiceContract {
@@ -98,9 +99,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
   String? _resolvedQueueId;
   bool _hasUploadedProof = false;
   String? _paymentStatus; // 'awaiting', 'pending_verification', 'success', 'expired', 'rejected'
+  int _uniqueCode = 1;
+  int _expectedAmount = 0;
+  String _dynamicQrisPayload = '';
 
   Map<String, int> _itemizedBill = {};
-
   @override
   void initState() {
     super.initState();
@@ -144,7 +147,31 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   Future<void> _loadInitialData() async {
     setState(() => _isLoading = true);
-    
+    _uniqueCode = EmvcoQrisHelper.deriveDeterministicUniqueCode(widget.orderId);
+    _expectedAmount = widget.totalPrice + _uniqueCode;
+    String? resolvedStaticQris =
+        (widget.barbershopId == null || widget.barbershopId == 'febrian-barbershop')
+            ? EmvcoQrisHelper.defaultSampleStaticQris
+            : null;
+
+    if (widget.barbershopId != null &&
+        widget.barbershopId!.isNotEmpty &&
+        widget.tenantId == null) {
+      try {
+        final shop = await BarbershopService().getBarbershopById(widget.barbershopId!);
+        final raw = shop?.qrisRawPayload?.trim();
+        if (raw != null && raw.isNotEmpty && EmvcoQrisHelper.validateStaticQris(raw) == null) {
+          resolvedStaticQris = raw;
+        }
+      } catch (_) {}
+    }
+
+    _dynamicQrisPayload = resolvedStaticQris != null
+        ? EmvcoQrisHelper.generateDynamicQris(
+            resolvedStaticQris,
+            _expectedAmount > 0 ? _expectedAmount : 1,
+          )
+        : '';
     if (widget.tenantId != null) {
       _itemizedBill = {'Biaya Pendaftaran Tenant': widget.totalPrice};
       _paymentStatus = 'awaiting';
@@ -184,6 +211,22 @@ class _PaymentScreenState extends State<PaymentScreen> {
         final q = await _queueService.resolveQueueForCustomerByIdOrOrder(widget.orderId, userId);
         if (q != null) {
           _resolvedQueueId = q.id;
+          if (q.uniqueCode != null && q.uniqueCode! > 0) {
+            _uniqueCode = q.uniqueCode!;
+          }
+          if (q.expectedAmount != null && q.expectedAmount! > 0) {
+            _expectedAmount = q.expectedAmount!;
+          } else {
+            _expectedAmount = widget.totalPrice + _uniqueCode;
+          }
+          if (q.qrisDynamicPayload != null && q.qrisDynamicPayload!.isNotEmpty) {
+            _dynamicQrisPayload = q.qrisDynamicPayload!;
+          } else if (resolvedStaticQris != null) {
+            _dynamicQrisPayload = EmvcoQrisHelper.generateDynamicQris(
+              resolvedStaticQris,
+              _expectedAmount > 0 ? _expectedAmount : 1,
+            );
+          }
           _listenToQueue(q.id);
         }
       } catch (e) {
@@ -443,10 +486,44 @@ class _PaymentScreenState extends State<PaymentScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              const Text("Kode Unik Verifikasi Otomatis", style: TextStyle(color: Colors.white70, fontSize: 13)),
+              Text(
+                "+Rp $_uniqueCode",
+                style: const TextStyle(color: kSuccess, fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
               Text(l10n.totalBill, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
               Text(
                 NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(widget.totalPrice),
-                style: const TextStyle(color: kBrownAccent, fontSize: 20, fontWeight: FontWeight.w900),
+                style: const TextStyle(color: Colors.white70, fontSize: 15, fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text("Total Bayar Presisi QRIS", style: TextStyle(color: kBrownAccent, fontWeight: FontWeight.bold, fontSize: 15)),
+              Row(
+                children: [
+                  Text(
+                    NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(_expectedAmount),
+                    style: const TextStyle(color: kBrownAccent, fontSize: 20, fontWeight: FontWeight.w900),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () {
+                      Clipboard.setData(ClipboardData(text: _expectedAmount.toString()));
+                      _showSnack(l10n.copySuccess, success: true);
+                    },
+                    child: const Icon(Icons.copy_rounded, size: 16, color: kBrownAccent),
+                  ),
+                ],
               ),
             ],
           ),
@@ -457,48 +534,124 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   Widget _buildBankInfo(AppLocalizations l10n) {
     const accNumber = "87705955837";
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: kCardBg, borderRadius: BorderRadius.circular(20), border: Border.all(color: kBrownAccent.withValues(alpha:0.2))),
-      child: Row(
-        children: [
-          Container(
-            width: 56, height: 56,
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
-            alignment: Alignment.center,
-            child: const Text("BCA", style: TextStyle(color: Color(0xFF005CAA), fontWeight: FontWeight.w900, fontSize: 18)),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: kCardBg,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: kSuccess.withValues(alpha: 0.35)),
           ),
-          const SizedBox(width: 20),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text("Bank Central Asia", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
-                const SizedBox(height: 2),
-                const Text("FEBRIAN BARBERSHOP", style: TextStyle(color: kTextSecondary, fontSize: 12)),
-                const SizedBox(height: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(color: kSuccess.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
+                    child: const Text(
+                      "QRIS DINAMIS (0% BIAYA ADMIN)",
+                      style: TextStyle(color: kSuccess, fontWeight: FontWeight.w900, fontSize: 11),
+                    ),
+                  ),
+                  const Spacer(),
+                  const Icon(Icons.bolt_rounded, color: kSuccess, size: 18),
+                  const SizedBox(width: 4),
+                  const Text("DompetKu Auto", style: TextStyle(color: kTextSecondary, fontSize: 11)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                "Nominal Terkunci Otomatis: ${NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(_expectedAmount)}",
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                "Uang masuk 100% langsung ke rekening barbershop. Begitu Anda membayar nominal presisi di atas via DANA/GoPay/OVO/BCA/SeaBank/Mandiri, status antrean otomatis berubah Lunas.",
+                style: TextStyle(color: kTextSecondary, fontSize: 12, height: 1.4),
+              ),
+              const SizedBox(height: 12),
+              if (_dynamicQrisPayload.isNotEmpty)
                 Row(
                   children: [
-                    Text(accNumber, style: const TextStyle(color: kBrownAccent, fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 1)),
-                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        _dynamicQrisPayload,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.white38, fontSize: 11, fontFamily: 'monospace'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
                     GestureDetector(
                       onTap: () {
-                        Clipboard.setData(const ClipboardData(text: accNumber));
+                        Clipboard.setData(ClipboardData(text: _dynamicQrisPayload));
                         _showSnack(l10n.copySuccess, success: true);
                       },
                       child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(color: kBrownAccent.withValues(alpha:0.1), borderRadius: BorderRadius.circular(6)),
-                        child: const Icon(Icons.copy_rounded, size: 16, color: kBrownAccent),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(color: kBrownAccent.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
+                        child: const Text("Salin String QRIS", style: TextStyle(color: kBrownAccent, fontSize: 11, fontWeight: FontWeight.bold)),
                       ),
-                    )
+                    ),
                   ],
                 )
-              ],
-            ),
-          )
-        ],
-      ),
+              else
+                const Text(
+                  "QRIS toko belum dikonfigurasi. Silakan lakukan transfer manual atau pembayaran di kasir sesuai nominal presisi di atas.",
+                  style: TextStyle(color: Colors.orangeAccent, fontSize: 11, height: 1.4),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(color: kCardBg, borderRadius: BorderRadius.circular(20), border: Border.all(color: kBrownAccent.withValues(alpha: 0.2))),
+          child: Row(
+            children: [
+              Container(
+                width: 56, height: 56,
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                alignment: Alignment.center,
+                child: const Text("BCA", style: TextStyle(color: Color(0xFF005CAA), fontWeight: FontWeight.w900, fontSize: 18)),
+              ),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("Bank Central Asia (Fallback Manual)", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                    const SizedBox(height: 2),
+                    const Text("FEBRIAN BARBERSHOP", style: TextStyle(color: kTextSecondary, fontSize: 12)),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Text(accNumber, style: const TextStyle(color: kBrownAccent, fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                        const SizedBox(width: 12),
+                        GestureDetector(
+                          onTap: () {
+                            Clipboard.setData(const ClipboardData(text: accNumber));
+                            _showSnack(l10n.copySuccess, success: true);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(color: kBrownAccent.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
+                            child: const Icon(Icons.copy_rounded, size: 16, color: kBrownAccent),
+                          ),
+                        )
+                      ],
+                    )
+                  ],
+                ),
+              )
+            ],
+          ),
+        ),
+      ],
     );
   }
 

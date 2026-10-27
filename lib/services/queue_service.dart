@@ -7,6 +7,7 @@ import 'package:flutter/material.dart'; // Needed for DateTimeRange
 import 'package:intl/intl.dart';
 import 'package:geges_smartbarber/models/queue.dart';
 
+import 'package:geges_smartbarber/utils/emvco_qris_helper.dart';
 import 'queue_service_contract.dart';
 
 class QueueService implements QueueServiceContract {
@@ -549,6 +550,62 @@ class QueueService implements QueueServiceContract {
     if (custId != null) await _sendNotification(custId, "Pembayaran Diterima", "Jadwal Anda telah dikonfirmasi!", queueId);
   }
 
+  /// Mencocokkan mutasi masuk dari aplikasi DompetKu berdasarkan nominal unik (expected_amount)
+  /// dan otomatis mengubah status antrean menjadi 'booked' tanpa intervensi manual kasir.
+  Future<bool> reconcileDompetkuNotification({
+    required String barbershopId,
+    required int amount,
+    required String appSource,
+    required String dompetkuTxId,
+    String? payerName,
+  }) async {
+    // 1. Cek idempotensi: apakah dompetku_tx_id sudah pernah diproses?
+    final dupSnap = await _firestore
+        .collection('queues')
+        .where('dompetku_tx_id', isEqualTo: dompetkuTxId)
+        .limit(1)
+        .get();
+    if (dupSnap.docs.isNotEmpty) {
+      return true;
+    }
+
+    // 2. Cari antrean awaiting_payment / waiting di barbershop ini dengan expected_amount == amount
+    final pendingSnap = await _firestore
+        .collection('queues')
+        .where('barbershop_id', isEqualTo: barbershopId)
+        .where('status', whereIn: ['awaiting_payment', 'waiting'])
+        .get();
+
+    for (final doc in pendingSnap.docs) {
+      final data = doc.data();
+      final expAmt = (data['expected_amount'] as num?)?.toInt();
+      if (expAmt == amount) {
+        await doc.reference.update({
+          'status': 'booked',
+          'payment_method': 'qris_dompetku',
+          'payment_app_source': appSource,
+          'dompetku_tx_id': dompetkuTxId,
+          'verified_by': 'dompetku_auto',
+          'payment_confirmed_at': FieldValue.serverTimestamp(),
+          'payment_confirmed_by': 'dompetku_auto ($appSource)',
+          'payment_verification_status': 'accepted',
+          'updated_at': FieldValue.serverTimestamp(),
+        });
+        final custId = data['customer_id']?.toString();
+        if (custId != null && custId.isNotEmpty) {
+          await _sendNotification(
+            custId,
+            'Pembayaran QRIS Otomatis Diterima ($appSource)',
+            'Pembayaran Rp $amount terverifikasi otomatis oleh DompetKu. Jadwal Anda telah terkunci!',
+            doc.id,
+          );
+        }
+        return true;
+      }
+    }
+    return false;
+  }
+
   Future<void> adminRejectPayment(String queueId, {String? reason, String? adminUid}) async {
     final ref = await _resolveQueueDocRef(queueId);
     final doc = await ref.get();
@@ -741,6 +798,37 @@ class QueueService implements QueueServiceContract {
              serverCalculatedPrice += barberFee;
           }
           dataToSave['total_price'] = serverCalculatedPrice;
+
+          // D. Alokasi Kode Unik (1..50) Anti-Bentrok & Payload QRIS Dinamis (0% Biaya Admin)
+          final basePriceInt = serverCalculatedPrice.round();
+          if (basePriceInt > 0) {
+            final usedExpectedAmounts = <int>{};
+            for (final eqDoc in existingQueues.docs) {
+              final eqData = eqDoc.data();
+              final eqStatus = eqData['status']?.toString() ?? '';
+              if (eqStatus == 'awaiting_payment' || eqStatus == 'waiting') {
+                final exp = (eqData['expected_amount'] as num?)?.toInt();
+                if (exp != null) usedExpectedAmounts.add(exp);
+              }
+            }
+            int allocatedCode = 1;
+            for (int c = 1; c <= 50; c++) {
+              if (!usedExpectedAmounts.contains(basePriceInt + c)) {
+                allocatedCode = c;
+                break;
+              }
+            }
+            final expectedAmount = basePriceInt + allocatedCode;
+            dataToSave['unique_code'] = allocatedCode;
+            dataToSave['expected_amount'] = expectedAmount;
+
+            final rawQris = (shopData['qris_raw_payload'] ?? shopData['qrisRawPayload'])?.toString() ??
+                EmvcoQrisHelper.defaultSampleStaticQris;
+            if (EmvcoQrisHelper.validateStaticQris(rawQris) == null) {
+              dataToSave['qris_dynamic_payload'] =
+                  EmvcoQrisHelper.generateDynamicQris(rawQris, expectedAmount);
+            }
+          }
 
           // 2. Race Condition Check (Barber Spesifik)
           final String? targetBarberId = dataToSave['barberman_id'];

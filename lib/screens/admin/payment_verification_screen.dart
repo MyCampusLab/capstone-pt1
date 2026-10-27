@@ -328,13 +328,24 @@ class _PaymentVerificationScreenState extends State<PaymentVerificationScreen> {
                         locale: 'id_ID',
                         symbol: 'Rp ',
                         decimalDigits: 0,
-                      ).format(q.totalPrice),
+                      ).format(q.expectedAmount ?? q.totalPrice),
                       style: const TextStyle(
                         color: kBrownAccent,
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+                    if (q.uniqueCode != null) ...[
+                      const SizedBox(width: 6),
+                      Text(
+                        '(Kode Unik +${q.uniqueCode})',
+                        style: const TextStyle(
+                          color: Colors.greenAccent,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ],
@@ -410,14 +421,16 @@ class _PaymentVerificationScreenState extends State<PaymentVerificationScreen> {
                       _row('Duration', '${q.estimatedDuration} min'),
                     if (q.totalPrice != null)
                       _row(
-                        'Price',
+                        'Nominal Presisi QRIS',
                         NumberFormat.currency(
                           locale: 'id_ID',
                           symbol: 'Rp ',
                           decimalDigits: 0,
-                        ).format(q.totalPrice),
+                        ).format(q.expectedAmount ?? q.totalPrice),
                         kBrownAccent,
                       ),
+                    if (q.uniqueCode != null)
+                      _row('Kode Unik DompetKu', '+Rp ${q.uniqueCode}', Colors.greenAccent),
                     if (q.paymentDeadline != null)
                       _row(
                         'Deadline',
@@ -524,43 +537,41 @@ class _PaymentVerificationScreenState extends State<PaymentVerificationScreen> {
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: !hasProof
-                          ? null
-                          : () async {
-                              try {
-                                await _queueService.adminConfirmPayment(
-                                  q.id,
-                                  adminNotes: noteCtrl.text.trim().isEmpty
-                                      ? null
-                                      : noteCtrl.text.trim(),
-                                );
-                                if (c.mounted) {
-                                  Navigator.pop(c);
-                                  if (c.mounted) {
-                                    ScaffoldMessenger.of(c).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Pembayaran dikonfirmasi',
-                                        ),
-                                        backgroundColor: Colors.green,
-                                      ),
-                                    );
-                                  }
-                                }
-                              } catch (e) {
-                                if (c.mounted) {
-                                  ScaffoldMessenger.of(c).showSnackBar(
-                                    SnackBar(content: Text('Error: $e')),
-                                  );
-                                }
-                              }
-                            },
+                      onPressed: () async {
+                        try {
+                          await _queueService.adminConfirmPayment(
+                            q.id,
+                            adminNotes: noteCtrl.text.trim().isEmpty
+                                ? (hasProof ? null : 'Dikonfirmasi manual via mutasi QRIS/Tunai kasir')
+                                : noteCtrl.text.trim(),
+                          );
+                          if (c.mounted) {
+                            Navigator.pop(c);
+                            if (c.mounted) {
+                              ScaffoldMessenger.of(c).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Pembayaran dikonfirmasi',
+                                  ),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            }
+                          }
+                        } catch (e) {
+                          if (c.mounted) {
+                            ScaffoldMessenger.of(c).showSnackBar(
+                              SnackBar(content: Text('Error: $e')),
+                            );
+                          }
+                        }
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: kBrownAccent,
                         minimumSize: const Size.fromHeight(44),
                         disabledBackgroundColor: Colors.grey,
                       ),
-                      child: const Text('Konfirmasi'),
+                      child: Text(hasProof ? 'Konfirmasi' : 'Konfirmasi Mutasi / Tunai'),
                     ),
                   ),
                   const SizedBox(width: 10),

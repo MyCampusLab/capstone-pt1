@@ -31,14 +31,7 @@ jobs:
         working-directory: backend
         env:
           CI: true
-        run: |
-          files=$(git ls-files 'backend/src/tests/**/*.test.ts' || true)
-          if [ -z "$files" ]; then
-            echo "No backend test files found."
-          else
-            echo "Running backend tests: $files"
-            bun test $files
-          fi
+        run: bun test
 
   flutter-checks:
     name: Flutter Analyze & Tests
@@ -58,5 +51,5 @@ jobs:
       - name: Run Flutter Analyze
         run: flutter analyze
 
-      - name: Run Stable Widget Tests
-        run: flutter test test/widget/auth/login_register_ui_test.dart
+      - name: Run Stable Unit & Widget Tests
+        run: flutter test test/unit/emvco_qris_helper_test.dart test/widget/auth/login_register_ui_test.dart test/widget/payment/payment_screen_widget_test.dart test/widget/payment_screen_blocking_v2_test.dart test/widget/payment/payment_screen_tenant_snackbar_test.dart

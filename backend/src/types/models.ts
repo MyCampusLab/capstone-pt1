@@ -1,3 +1,5 @@
+import { buildValidStaticQris } from '../algorithms/emvcoQris.js';
+
 export interface FallbackTenant {
   id: number;
   slug: string;
@@ -5,6 +7,8 @@ export interface FallbackTenant {
   address: string;
   phone: string;
   chairs_count: number;
+  qris_raw_payload: string;
+  webhook_secret: string;
 }
 
 export interface FallbackBarber {
@@ -34,6 +38,13 @@ export const FALLBACK_TENANTS: FallbackTenant[] = [
     address: 'Jl. Pala Raya No.Desa, Kademangan, Mejasem Barat, Kec. Kramat, Kab. Tegal 52181',
     phone: '087896903760',
     chairs_count: 4,
+    qris_raw_payload: buildValidStaticQris({
+      nmid: 'ID1025000001001',
+      merchantName: 'FEBRIAN BARBERSHOP',
+      merchantCity: 'TEGAL',
+      postalCode: '52181',
+    }),
+    webhook_secret: 'dompetku-secret-febrian',
   },
   {
     id: 2,
@@ -42,6 +53,13 @@ export const FALLBACK_TENANTS: FallbackTenant[] = [
     address: 'Samping Big Laundry, Jl. Projosumarto 1, Kaladawa, Kec. Talang, Kab. Tegal 52193',
     phone: '088226323086',
     chairs_count: 3,
+    qris_raw_payload: buildValidStaticQris({
+      nmid: 'ID1025000002002',
+      merchantName: 'RR BARBER STUDIO',
+      merchantCity: 'TEGAL',
+      postalCode: '52193',
+    }),
+    webhook_secret: 'dompetku-secret-rr',
   },
   {
     id: 3,
@@ -50,6 +68,13 @@ export const FALLBACK_TENANTS: FallbackTenant[] = [
     address: 'Jl. Kapten Ismail No. 20, Kota Tegal (depan SJT Custom)',
     phone: '085727566125',
     chairs_count: 3,
+    qris_raw_payload: buildValidStaticQris({
+      nmid: 'ID1025000003003',
+      merchantName: 'STUPID CULTURE BARBER',
+      merchantCity: 'KOTA TEGAL',
+      postalCode: '52112',
+    }),
+    webhook_secret: 'dompetku-secret-stupid',
   },
 ];
 

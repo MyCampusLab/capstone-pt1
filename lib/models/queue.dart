@@ -101,7 +101,11 @@ class Queue {
   final String? customerName; // New: For manual booking display
   final String? orderId; // New: For order tracking
   final Map<String, String>? serviceNotes; // New: Notes per service
-
+  final int? uniqueCode;
+  final int? expectedAmount;
+  final String? qrisDynamicPayload;
+  final String? paymentAppSource;
+  final String? dompetkuTxId;
   Queue({
     required this.id,
     required this.barbershopId,
@@ -136,6 +140,11 @@ class Queue {
     this.customerName,
     this.orderId,
     this.serviceNotes,
+    this.uniqueCode,
+    this.expectedAmount,
+    this.qrisDynamicPayload,
+    this.paymentAppSource,
+    this.dompetkuTxId,
   });
 
   String? get firstServiceId {
@@ -186,6 +195,11 @@ class Queue {
       customerName: readString(data['customer_name'] ?? data['customerName']),
       orderId: data['order_id'] ?? data['orderId'],
       serviceNotes: (data['service_notes'] as Map<String, dynamic>?)?.map((key, value) => MapEntry(key, value.toString())),
+      uniqueCode: (data['unique_code'] ?? data['uniqueCode'])?.toInt(),
+      expectedAmount: (data['expected_amount'] ?? data['expectedAmount'])?.toInt(),
+      qrisDynamicPayload: readString(data['qris_dynamic_payload'] ?? data['qrisDynamicPayload']),
+      paymentAppSource: readString(data['payment_app_source'] ?? data['paymentAppSource']),
+      dompetkuTxId: readString(data['dompetku_tx_id'] ?? data['dompetkuTxId']),
     );
   }
 
@@ -222,6 +236,11 @@ class Queue {
       'customer_name': customerName,
       'order_id': orderId,
       'service_notes': serviceNotes,
+      'unique_code': uniqueCode,
+      'expected_amount': expectedAmount,
+      'qris_dynamic_payload': qrisDynamicPayload,
+      'payment_app_source': paymentAppSource,
+      'dompetku_tx_id': dompetkuTxId,
     };
     data.removeWhere((_, v) => v == null);
     return data;
@@ -261,6 +280,11 @@ class Queue {
     String? customerName,
     String? orderId,
     Map<String, String>? serviceNotes,
+    int? uniqueCode,
+    int? expectedAmount,
+    String? qrisDynamicPayload,
+    String? paymentAppSource,
+    String? dompetkuTxId,
   }) {
     return Queue(
       id: id ?? this.id,
@@ -296,6 +320,11 @@ class Queue {
       customerName: customerName ?? this.customerName,
       orderId: orderId ?? this.orderId,
       serviceNotes: serviceNotes ?? this.serviceNotes,
+      uniqueCode: uniqueCode ?? this.uniqueCode,
+      expectedAmount: expectedAmount ?? this.expectedAmount,
+      qrisDynamicPayload: qrisDynamicPayload ?? this.qrisDynamicPayload,
+      paymentAppSource: paymentAppSource ?? this.paymentAppSource,
+      dompetkuTxId: dompetkuTxId ?? this.dompetkuTxId,
     );
   }
 }
