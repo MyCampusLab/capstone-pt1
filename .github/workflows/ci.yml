@@ -31,7 +31,7 @@ jobs:
         working-directory: backend
         env:
           CI: true
-        run: bun test
+        run: bun test --concurrency=1
 
   flutter-checks:
     name: Flutter Analyze & Tests

@@ -7,6 +7,7 @@ plugins {
     id("com.google.gms.google-services")
     // END: FlutterFire Configuration
     id("kotlin-android")
+    // Updated to 8.11.1 to support Flutter with Gradle 8.14
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
@@ -20,8 +21,7 @@ if (keystorePropertiesFile.exists()) {
 android {
     namespace = "com.example.geges_smartbarber"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
-
+    ndkVersion = "28.2.13676358"
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -42,18 +42,37 @@ android {
         versionName = flutter.versionName
     }
 
+    flavorDimensions += "app"
+    productFlavors {
+        create("customer") {
+            dimension = "app"
+            resValue("string", "app_name", "SmartBarber")
+        }
+        create("partner") {
+            dimension = "app"
+            applicationIdSuffix = ".partner"
+            resValue("string", "app_name", "SmartBarber Partner")
+        }
+    }
+
     signingConfigs {
-        create("release") {
-            keyAlias = keystoreProperties["keyAlias"] as String
-            keyPassword = keystoreProperties["keyPassword"] as String
-            storeFile = file(keystoreProperties["storeFile"] as String)
-            storePassword = keystoreProperties["storePassword"] as String
+        if (keystorePropertiesFile.exists()) {
+            create("release") {
+                keyAlias = keystoreProperties["keyAlias"] as? String
+                keyPassword = keystoreProperties["keyPassword"] as? String
+                storeFile = (keystoreProperties["storeFile"] as? String)?.let { file(it) }
+                storePassword = keystoreProperties["storePassword"] as? String
+            }
         }
     }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = if (keystorePropertiesFile.exists()) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 }

@@ -49,6 +49,36 @@
         }
       }
     }
+    ,
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:51527807075:android:4ac445a0dfdad2420a4856",
+        "android_client_info": {
+          "package_name": "com.example.geges_smartbarber.partner"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "51527807075-2jpi3mhgcg8nrcu9snhh1fjhbn747u4r.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDtqlNucmw3zjqL1RE-uz6_UcD4Kv1hPoo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "51527807075-2jpi3mhgcg8nrcu9snhh1fjhbn747u4r.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
   ],
   "configuration_version": "1"
 }

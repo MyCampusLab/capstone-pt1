@@ -45,3 +45,4 @@ minio_data/
 # Testing artifacts
 test_report.json
 *.apk
+android/build/reports/
