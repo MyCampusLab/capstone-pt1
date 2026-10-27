@@ -17,6 +17,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:geges_smartbarber/l10n/generated/app_localizations.dart';
 import 'package:geges_smartbarber/utils/emvco_qris_helper.dart';
+import 'package:geges_smartbarber/services/http_api_client.dart';
 
 // --- No-Op Service for Tenant Mode ---
 class _NoOpQueueService implements QueueServiceContract {
@@ -131,6 +132,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
         setState(() {
           if (_timeRemaining.inSeconds > 0) {
             _timeRemaining -= const Duration(seconds: 1);
+            if (widget.queueService == null &&
+                widget.tenantId == null &&
+                _paymentStatus != 'success' &&
+                _timeRemaining.inSeconds % 4 == 0) {
+              _pollBackendPaymentStatus();
+            }
           } else {
             timer.cancel();
             _paymentStatus = 'expired';
@@ -237,6 +244,34 @@ class _PaymentScreenState extends State<PaymentScreen> {
     setState(() => _isLoading = false);
   }
 
+
+  Future<void> _pollBackendPaymentStatus() async {
+    final shopSlug = (widget.barbershopId != null && widget.barbershopId!.isNotEmpty)
+        ? widget.barbershopId!
+        : 'febrian-barbershop';
+    try {
+      final api = HttpApiClient();
+      final res = await api.get('/api/payments/$shopSlug/status/${widget.orderId}');
+      api.close();
+      if (!mounted || res is! Map) return;
+      setState(() {
+        if (res['uniqueCode'] is num && (res['uniqueCode'] as num) > 0) {
+          _uniqueCode = (res['uniqueCode'] as num).toInt();
+        }
+        if (res['expectedAmount'] is num && (res['expectedAmount'] as num) > 0) {
+          _expectedAmount = (res['expectedAmount'] as num).toInt();
+        }
+        if (res['qrisDynamicPayload'] is String &&
+            (res['qrisDynamicPayload'] as String).isNotEmpty) {
+          _dynamicQrisPayload = res['qrisDynamicPayload'] as String;
+        }
+        if (res['status'] == 'verified') {
+          _paymentStatus = 'success';
+          _timer?.cancel();
+        }
+      });
+    } catch (_) {}
+  }
   void _listenToQueue(String queueId) {
     _queueSub?.cancel();
     _queueSub = _queueService.streamQueueById(queueId).listen((q) {
@@ -574,7 +609,35 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 style: TextStyle(color: kTextSecondary, fontSize: 12, height: 1.4),
               ),
               const SizedBox(height: 12),
-              if (_dynamicQrisPayload.isNotEmpty)
+              if (_dynamicQrisPayload.isNotEmpty) ...[
+                Center(
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CustomPaint(
+                          size: const Size(148, 148),
+                          painter: _QrisMatrixPreviewPainter(_dynamicQrisPayload),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          "NMID QRIS • Rp $_expectedAmount",
+                          style: const TextStyle(
+                            color: Colors.black87,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
@@ -598,7 +661,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       ),
                     ),
                   ],
-                )
+                ),
+              ]
               else
                 const Text(
                   "QRIS toko belum dikonfigurasi. Silakan lakukan transfer manual atau pembayaran di kasir sesuai nominal presisi di atas.",
@@ -824,4 +888,58 @@ class _PaymentScreenState extends State<PaymentScreen> {
       ),
     );
   }
+}
+
+class _QrisMatrixPreviewPainter extends CustomPainter {
+  final String payload;
+  const _QrisMatrixPreviewPainter(this.payload);
+
+  bool _isFinder(int r, int c, int n) {
+    final topLeft = r < 7 && c < 7;
+    final topRight = r < 7 && c >= n - 7;
+    final bottomLeft = r >= n - 7 && c < 7;
+    return topLeft || topRight || bottomLeft;
+  }
+
+  bool _finderModule(int r, int c) {
+    if (r == 0 || r == 6 || c == 0 || c == 6) return true;
+    if (r >= 2 && r <= 4 && c >= 2 && c <= 4) return true;
+    return false;
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const int grid = 25;
+    final double cell = size.width / grid;
+    final Paint dark = Paint()..color = Colors.black;
+
+    for (int r = 0; r < grid; r++) {
+      for (int c = 0; c < grid; c++) {
+        bool fill = false;
+        if (r < 7 && c < 7) {
+          fill = _finderModule(r, c);
+        } else if (r < 7 && c >= grid - 7) {
+          fill = _finderModule(r, c - (grid - 7));
+        } else if (r >= grid - 7 && c < 7) {
+          fill = _finderModule(r - (grid - 7), c);
+        } else if (r == 6 || c == 6) {
+          fill = (r + c).isEven;
+        } else if (!_isFinder(r, c, grid)) {
+          final int idx = (r * grid + c) % payload.length;
+          final int code = payload.codeUnitAt(idx);
+          fill = ((code + r * 7 + c * 13) & 1) == 1;
+        }
+        if (fill) {
+          canvas.drawRect(
+            Rect.fromLTWH(c * cell, r * cell, cell * 0.92, cell * 0.92),
+            dark,
+          );
+        }
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _QrisMatrixPreviewPainter oldDelegate) =>
+      oldDelegate.payload != payload;
 }

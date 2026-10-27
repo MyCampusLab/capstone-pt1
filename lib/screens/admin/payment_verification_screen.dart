@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:geges_smartbarber/models/queue.dart';
 import 'package:geges_smartbarber/services/queue_service.dart';
 import 'package:geges_smartbarber/widgets/app_image.dart';
+import 'package:geges_smartbarber/services/http_api_client.dart';
 
 const Color kBrownAccent = Color(0xFFC3A47B);
 const Color kDarkGrey = Color(0xFF1E1E1E);
@@ -27,6 +28,28 @@ class _PaymentVerificationScreenState extends State<PaymentVerificationScreen> {
   
   bool _isLoadingDetails = false;
   final Map<String, Map<String, dynamic>> _detailsMap = {};
+  List<Map<String, dynamic>> _unmatchedNotifications = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUnmatchedFromBackend();
+  }
+
+  Future<void> _loadUnmatchedFromBackend() async {
+    try {
+      final api = HttpApiClient();
+      final res = await api.get('/api/payments/febrian-barbershop/unmatched');
+      api.close();
+      if (!mounted || res is! List) return;
+      setState(() {
+        _unmatchedNotifications = res
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
+      });
+    } catch (_) {}
+  }
 
   Future<void> _fetchBulkDetails(List<Queue> queues) async {
     final customerIds = queues.map((q) => q.customerId).toSet();
@@ -109,6 +132,13 @@ class _PaymentVerificationScreenState extends State<PaymentVerificationScreen> {
           'Verifikasi Pembayaran',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
         ),
+        actions: [
+          IconButton(
+            tooltip: 'Sinkronisasi Mutasi DompetKu',
+            icon: const Icon(Icons.sync_rounded, color: kBrownAccent),
+            onPressed: _loadUnmatchedFromBackend,
+          ),
+        ],
       ),
       body: StreamBuilder<List<Queue>>(
         stream: _queueService.streamAllQueues(
@@ -545,6 +575,21 @@ class _PaymentVerificationScreenState extends State<PaymentVerificationScreen> {
                                 ? (hasProof ? null : 'Dikonfirmasi manual via mutasi QRIS/Tunai kasir')
                                 : noteCtrl.text.trim(),
                           );
+                          try {
+                            final api = HttpApiClient();
+                            final shopSlug = q.barbershopId.isNotEmpty
+                                ? q.barbershopId
+                                : 'febrian-barbershop';
+                            await api.post('/api/payments/$shopSlug/verify-manual', {
+                              'ticketNumber': q.orderId ?? q.id,
+                              'actor': 'kasir_admin_app',
+                              if (_unmatchedNotifications.isNotEmpty)
+                                'unmatchedTxId':
+                                    _unmatchedNotifications.first['dompetku_tx_id'],
+                            });
+                            api.close();
+                            await _loadUnmatchedFromBackend();
+                          } catch (_) {}
                           if (c.mounted) {
                             Navigator.pop(c);
                             if (c.mounted) {

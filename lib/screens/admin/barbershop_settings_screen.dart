@@ -7,6 +7,7 @@ import 'package:geges_smartbarber/utils/emvco_qris_helper.dart';
 import 'package:geges_smartbarber/models/barbershop.dart';
 import 'package:geges_smartbarber/services/barbershop_service.dart';
 import 'package:geges_smartbarber/widgets/app_image.dart';
+import 'package:geges_smartbarber/services/http_api_client.dart';
 
 class BarbershopSettingsScreen extends StatefulWidget {
   final Barbershop barbershop;
@@ -171,6 +172,16 @@ class _BarbershopSettingsScreenState extends State<BarbershopSettingsScreen> {
       }
 
       await _service.updateBarbershopSettings(widget.barbershop.id, updates);
+      final qrisRaw = _qrisPayloadController.text.trim();
+      if (qrisRaw.isNotEmpty) {
+        try {
+          final api = HttpApiClient();
+          await api.put('/api/payments/${widget.barbershop.id}/qris-config', {
+            'qrisRawPayload': qrisRaw,
+          });
+          api.close();
+        } catch (_) {}
+      }
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -339,11 +350,22 @@ class _BarbershopSettingsScreenState extends State<BarbershopSettingsScreen> {
               ),
               const SizedBox(height: 12),
               OutlinedButton.icon(
-                onPressed: () {
-                  final webhookUrl =
+                onPressed: () async {
+                  String webhookUrl =
                       widget.barbershop.dompetkuWebhookUrl ??
-                      'https://api.gegesbarber.id/api/payments/webhook/${widget.barbershop.id}';
-                  Clipboard.setData(ClipboardData(text: webhookUrl));
+                      'http://127.0.0.1:4000/api/payments/webhook/${widget.barbershop.id}?secret=dompetku-febrian-secret-2026';
+                  try {
+                    final api = HttpApiClient();
+                    final cfg = await api.get(
+                      '/api/payments/${widget.barbershop.id}/dompetku-config',
+                    );
+                    api.close();
+                    if (cfg is Map && cfg['smartPasteUrl'] is String) {
+                      webhookUrl = cfg['smartPasteUrl'] as String;
+                    }
+                  } catch (_) {}
+                  await Clipboard.setData(ClipboardData(text: webhookUrl));
+                  if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('URL Webhook DompetKu disalin: $webhookUrl'),

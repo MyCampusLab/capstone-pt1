@@ -6,10 +6,12 @@ import 'package:http/http.dart' as http;
 class HttpApiClient {
   static const String _defaultUrl = kIsWeb
       ? 'http://localhost:4000'
-      : (kDebugMode && !kIsWeb)
-          // 10.0.2.2 is Android emulator loopback to host; localhost for desktop/iOS
-          ? 'http://10.0.2.2:4000'
-          : 'http://localhost:4000';
+      : 'http://127.0.0.1:4000';
+
+  static const String _defaultAdminKey = String.fromEnvironment(
+    'ADMIN_API_KEY',
+    defaultValue: 'smartbarber-admin-secret-key',
+  );
 
   final String baseUrl;
   final http.Client _client;
@@ -23,9 +25,9 @@ class HttpApiClient {
     return {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
+      'x-admin-key': _defaultAdminKey,
     };
   }
-
   Future<dynamic> get(String path) async {
     final uri = Uri.parse('$baseUrl$path');
     try {
@@ -46,6 +48,19 @@ class HttpApiClient {
       return _handleResponse(res);
     } on SocketException catch (e) {
       debugPrint('[API] Socket error on POST $path: $e');
+      throw Exception('Gagal terhubung ke server backend ($baseUrl).');
+    }
+  }
+
+  Future<dynamic> put(String path, Map<String, dynamic> body) async {
+    final uri = Uri.parse('$baseUrl$path');
+    try {
+      final res = await _client
+          .put(uri, headers: _headers, body: jsonEncode(body))
+          .timeout(const Duration(seconds: 10));
+      return _handleResponse(res);
+    } on SocketException catch (e) {
+      debugPrint('[API] Socket error on PUT $path: $e');
       throw Exception('Gagal terhubung ke server backend ($baseUrl).');
     }
   }
